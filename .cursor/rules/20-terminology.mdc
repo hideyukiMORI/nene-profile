@@ -1,0 +1,49 @@
+---
+description: 識別子の唯一の正解 — terminology.md を必ず確認する
+alwaysApply: true
+---
+
+# Terminology — Zero Tolerance
+
+**`docs/explanation/terminology.md` はすべての識別子の唯一の正解。**
+コード・API・DB・テスト・ドキュメントを書く前に必ず参照すること。
+
+## 確認が必須の識別子
+
+以下を書くときは **必ず terminology.md を先に確認する**:
+
+- PHP クラス名・メソッド名・例外名
+- DB テーブル名・カラム名
+- JSON プロパティ名
+- URL パスセグメント・operationId
+- 環境変数名
+- フロントエンドフォルダ名・コンポーネント名
+- ステータス値・ロール値・ケイパビリティ値・トランスフォーマー ID
+- Problem Details スラグ
+
+## マージブロック条件
+
+以下はすべて不具合として **マージをブロックする**:
+
+- terminology.md 登録済み用語のタイポ
+- 登録済み用語のスペルバリエーション（略称、camelCase/snake_case 混用等）
+- terminology.md §14「よくある禁止スペル早見表」に掲載の禁止形式の使用
+- 新規識別子を同 PR で terminology.md に追加せずに使うこと
+
+## 典型的な間違いパターン
+
+| やりがちな間違い | 正しい確認先 |
+|---|---|
+| `orgId` を使う | `organization_id` → terminology.md §8 |
+| `status: "done"` を使う | `completed` → terminology.md §4 |
+| `manage_jobs` を使う | `manage_import_jobs` → terminology.md §6 |
+| `Controller` サフィックス | `Handler` → terminology.md §3 |
+| `Service` サフィックス | `UseCase` → terminology.md §3 |
+| `Repo` 略称 | `RepositoryInterface` / `PdoXxxRepository` → terminology.md §3 |
+| JSON に camelCase | snake_case → terminology.md §8 |
+
+## 識別子を追加する場合
+
+1. terminology.md の適切なセクションに行を追加
+2. 同一 PR でコードと一緒にコミット
+3. PR 説明に「terminology.md 更新済み」と記載
