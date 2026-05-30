@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace NeneProfile\Organization;
 
+use Nene2\Database\DatabaseConstraintException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
-use PDOException;
 
 final readonly class PdoOrganizationRepository implements OrganizationRepositoryInterface
 {
@@ -81,8 +81,14 @@ final readonly class PdoOrganizationRepository implements OrganizationRepository
                     $now,
                 ],
             );
-        } catch (PDOException $e) {
-            if (str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+        } catch (DatabaseConstraintException $e) {
+            // The query executor wraps the driver's PDOException (which never
+            // reaches a `catch (PDOException)`) into this type. The slug carries
+            // the only unique constraint a caller can act on, so map it; inspect
+            // the original message to avoid mislabelling a custom_domain clash.
+            $previous = $e->getPrevious();
+            $detail = $previous !== null ? $previous->getMessage() : $e->getMessage();
+            if (!str_contains($detail, 'custom_domain')) {
                 throw new OrganizationSlugConflictException($organization->slug);
             }
 
