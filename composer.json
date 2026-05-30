@@ -37,7 +37,8 @@
         "check": [
             "@test",
             "@analyse",
-            "@cs"
+            "@cs",
+            "@openapi"
         ]
     },
     "config": {
@@ -47,6 +48,7 @@
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^13.1",
-        "robmorgan/phinx": "^0.16.11"
+        "robmorgan/phinx": "^0.16.11",
+        "symfony/yaml": "^8.0"
     }
 }

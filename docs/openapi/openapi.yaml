@@ -1,0 +1,1197 @@
+openapi: 3.1.0
+info:
+  title: NeNe Profile API
+  version: 0.1.0
+  description: >
+    NeNe Profile public API contract — multi-tenant bank CSV normalization on NENE2.
+    Covers organization & user management, mapping presets with immutable versioning,
+    import jobs with row-level error reporting, StandardTransaction export, and the
+    audit trail. All amounts are integer minimum currency units (JPY cents). Dates are
+    ISO 8601. Admin routes require a Bearer JWT (see Auth). Errors use RFC 9457 Problem
+    Details (application/problem+json) with base type URL https://nene-profile.dev/problems/.
+servers:
+  - url: http://localhost:8090
+    description: Local development server
+tags:
+  - name: System
+    description: Runtime health endpoints.
+  - name: Auth
+    description: Authentication endpoints.
+  - name: Organizations
+    description: Tenant management (superadmin only).
+  - name: Users
+    description: Operator account management within an organization (admin only).
+  - name: OrganizationSettings
+    description: Per-organization configuration.
+  - name: MappingPresets
+    description: Bank CSV column-mapping presets with immutable versioning.
+  - name: ImportJobs
+    description: CSV normalization jobs, row-level errors, and StandardTransaction export.
+  - name: AuditLogs
+    description: Audit trail of all mutating operations (ADR 0005).
+security:
+  - BearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Operational health check including database connectivity. Unauthenticated.
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                service: NeNe Profile
+                checks:
+                  database: ok
+        '503':
+          description: One or more dependencies are degraded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /admin/auth/login:
+    post:
+      tags: [Auth]
+      summary: Operator login
+      description: Authenticates with email/password and returns a Bearer JWT (24h TTL).
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: admin@nene-profile.local
+              password: secret
+      responses:
+        '200':
+          description: Token issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /admin/organizations:
+    get:
+      tags: [Organizations]
+      summary: List organizations
+      description: Returns a paginated list of organizations. Superadmin only.
+      operationId: listOrganizations
+      parameters:
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Paginated organization list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Organizations]
+      summary: Create organization
+      description: Creates a new tenant. Superadmin only.
+      operationId: createOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationRequest'
+            example:
+              name: Acme Corp
+              slug: acme
+              is_active: true
+      responses:
+        '201':
+          description: Organization created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /admin/organizations/{id}:
+    get:
+      tags: [Organizations]
+      summary: Get organization by ID
+      operationId: getOrganizationById
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Organization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Organizations]
+      summary: Delete organization
+      description: Deletes a tenant. Superadmin only. Recorded in the audit trail.
+      operationId: deleteOrganization
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: Lists operator accounts within the caller's organization. Admin only.
+      operationId: listUsers
+      parameters:
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Paginated user list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Users]
+      summary: Create user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /admin/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      operationId: getUserById
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: User.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Users]
+      summary: Update user
+      operationId: updateUser
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    delete:
+      tags: [Users]
+      summary: Delete user
+      operationId: deleteUser
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/organization-settings:
+    get:
+      tags: [OrganizationSettings]
+      summary: Get organization settings
+      operationId: getOrganizationSettings
+      responses:
+        '200':
+          description: Settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationSettingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags: [OrganizationSettings]
+      summary: Update organization settings
+      operationId: updateOrganizationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationSettingsRequest'
+      responses:
+        '200':
+          description: Settings updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationSettingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /admin/mapping-presets:
+    get:
+      tags: [MappingPresets]
+      summary: List mapping presets
+      operationId: listMappingPresets
+      parameters:
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Paginated preset list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MappingPresetListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+    post:
+      tags: [MappingPresets]
+      summary: Create mapping preset
+      description: Creates a preset and its first immutable version.
+      operationId: createMappingPreset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMappingPresetRequest'
+      responses:
+        '201':
+          description: Preset created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MappingPresetResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /admin/mapping-presets/{id}:
+    get:
+      tags: [MappingPresets]
+      summary: Get mapping preset by ID
+      operationId: getMappingPresetById
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Preset.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MappingPresetResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [MappingPresets]
+      summary: Update mapping preset
+      description: Creates a new immutable version. Frozen versions are never mutated (ADR 0004).
+      operationId: updateMappingPreset
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMappingPresetRequest'
+      responses:
+        '200':
+          description: Preset updated (new version created).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MappingPresetResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    delete:
+      tags: [MappingPresets]
+      summary: Delete mapping preset
+      description: Soft-deletes the preset. Versions referenced by completed jobs are retained.
+      operationId: deleteMappingPreset
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Deleted.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/import-jobs:
+    get:
+      tags: [ImportJobs]
+      summary: List import jobs
+      operationId: listImportJobs
+      parameters:
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Paginated import job list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+    post:
+      tags: [ImportJobs]
+      summary: Create import job
+      description: >
+        Uploads a bank CSV and runs normalization against a preset version. The original
+        file is stored immutably with a SHA-256 hash (ADR 0004). Max 10 MiB.
+      operationId: createImportJob
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateImportJobRequest'
+      responses:
+        '201':
+          description: Import job created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
+  /admin/import-jobs/{id}:
+    get:
+      tags: [ImportJobs]
+      summary: Get import job by ID
+      operationId: getImportJobById
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Import job.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/import-jobs/{id}/errors:
+    get:
+      tags: [ImportJobs]
+      summary: List import job errors
+      description: Row-level errors collected during normalization.
+      operationId: listImportJobErrors
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Paginated error list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobErrorListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/import-jobs/{id}/export.json:
+    get:
+      tags: [ImportJobs]
+      summary: Export StandardTransaction (JSON)
+      description: StandardTransaction v1.0 records as a JSON array.
+      operationId: exportImportJobJson
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: StandardTransaction array.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StandardTransaction'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/import-jobs/{id}/export.csv:
+    get:
+      tags: [ImportJobs]
+      summary: Export StandardTransaction (CSV)
+      description: StandardTransaction v1.0 records as CSV (UTF-8, formula-injection stripped).
+      operationId: exportImportJobCsv
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: CSV download.
+          content:
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/audit-logs:
+    get:
+      tags: [AuditLogs]
+      summary: List audit logs
+      description: >
+        Audit trail for the caller's organization (superadmin sees all organizations).
+        Admin only.
+      operationId: listAuditLogs
+      parameters:
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Paginated audit log list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      example: 1
+    LimitQuery:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+    OffsetQuery:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+
+  responses:
+    Unauthenticated:
+      description: Missing or invalid Bearer token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Forbidden:
+      description: Authenticated but lacking the required capability.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    PayloadTooLarge:
+      description: Uploaded file exceeds the size limit.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ValidationFailed:
+      description: Request validation failed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ValidationProblemDetails'
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [ok, error]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      required: [token, expires_at, email, role]
+      properties:
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        org_id:
+          type: [integer, 'null']
+          format: int64
+
+    Role:
+      type: string
+      enum: [superadmin, admin, member, viewer]
+
+    OrganizationResponse:
+      type: object
+      required: [id, name, slug, is_active, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        is_active:
+          type: boolean
+        custom_domain:
+          type: [string, 'null']
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    OrganizationListResponse:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateOrganizationRequest:
+      type: object
+      required: [name, slug]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        is_active:
+          type: boolean
+          default: true
+        custom_domain:
+          type: [string, 'null']
+
+    UserResponse:
+      type: object
+      required: [id, email, role, status, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        organization_id:
+          type: [integer, 'null']
+          format: int64
+        status:
+          type: string
+          enum: [active, invited]
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    UserListResponse:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateUserRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+        role:
+          $ref: '#/components/schemas/Role'
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        status:
+          type: string
+          enum: [active, invited]
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    OrganizationSettingsResponse:
+      type: object
+      required: [organization_id, default_encoding, max_file_size_bytes]
+      properties:
+        organization_id:
+          type: integer
+          format: int64
+        default_encoding:
+          type: string
+          enum: [auto, utf-8, shift_jis]
+        max_file_size_bytes:
+          type: integer
+        clear_bearer_token_set:
+          type: boolean
+          description: True if a downstream Clear token is configured (the token value is never returned).
+
+    UpdateOrganizationSettingsRequest:
+      type: object
+      properties:
+        default_encoding:
+          type: string
+          enum: [auto, utf-8, shift_jis]
+        max_file_size_bytes:
+          type: integer
+          minimum: 1
+        clear_bearer_token:
+          type: [string, 'null']
+
+    MappingColumn:
+      type: object
+      required: [source, transform]
+      properties:
+        source:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Source column header(s). An array is used for two-column transforms.
+        transform:
+          type: string
+          enum:
+            - trim
+            - date_ymd_slash
+            - date_ymd_dash
+            - date_ymd_compact
+            - amount_yen_to_cents
+            - debit_credit_to_signed_cents
+            - single_column_signed_cents
+            - regex_extract
+        optional:
+          type: boolean
+          default: false
+
+    MappingDefinition:
+      type: object
+      required: [encoding, delimiter, header_row_index, columns]
+      properties:
+        encoding:
+          type: string
+          enum: [auto, utf-8, shift_jis]
+        delimiter:
+          type: string
+          enum: [auto, comma, tab]
+        header_row_index:
+          type: integer
+          minimum: 0
+          default: 0
+        year_pivot:
+          type: integer
+          minimum: 0
+          maximum: 99
+          default: 50
+          description: Two-digit year pivot (ADR 0003 §2).
+        columns:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MappingColumn'
+        skip_rows_matching:
+          type: array
+          items:
+            type: string
+        line_identity:
+          type: array
+          items:
+            type: string
+
+    MappingPresetResponse:
+      type: object
+      required: [id, name, bank_label, current_version_id, version_number, is_deleted, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        bank_label:
+          type: string
+        current_version_id:
+          type: integer
+          format: int64
+        version_number:
+          type: integer
+        definition:
+          $ref: '#/components/schemas/MappingDefinition'
+        is_deleted:
+          type: boolean
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    MappingPresetListResponse:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MappingPresetResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateMappingPresetRequest:
+      type: object
+      required: [name, bank_label, definition]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        bank_label:
+          type: string
+          minLength: 1
+        definition:
+          $ref: '#/components/schemas/MappingDefinition'
+
+    UpdateMappingPresetRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        bank_label:
+          type: string
+          minLength: 1
+        definition:
+          $ref: '#/components/schemas/MappingDefinition'
+
+    ImportJobStatus:
+      type: string
+      enum: [pending, running, completed, completed_with_errors, failed]
+
+    ImportJobResponse:
+      type: object
+      required:
+        - id
+        - organization_id
+        - preset_version_id
+        - original_filename
+        - original_file_hash
+        - status
+        - row_count
+        - error_count
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+        organization_id:
+          type: integer
+          format: int64
+        preset_version_id:
+          type: integer
+          format: int64
+        original_filename:
+          type: string
+        original_file_hash:
+          type: string
+          description: SHA-256 of the uploaded file bytes.
+        status:
+          $ref: '#/components/schemas/ImportJobStatus'
+        row_count:
+          type: integer
+        error_count:
+          type: integer
+        started_at:
+          type: [string, 'null']
+        completed_at:
+          type: [string, 'null']
+        created_at:
+          type: string
+
+    ImportJobListResponse:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportJobResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    CreateImportJobRequest:
+      type: object
+      required: [file, preset_id]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The bank CSV file.
+        preset_id:
+          type: integer
+          format: int64
+
+    ImportJobErrorResponse:
+      type: object
+      required: [id, import_job_id, raw_row_number, message]
+      properties:
+        id:
+          type: integer
+          format: int64
+        import_job_id:
+          type: integer
+          format: int64
+        raw_row_number:
+          type: integer
+          description: 1-based source CSV line.
+        message:
+          type: string
+        raw_snippet:
+          type: [string, 'null']
+
+    ImportJobErrorListResponse:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportJobErrorResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    StandardTransaction:
+      type: object
+      required:
+        - schema_version
+        - transaction_date
+        - value_date
+        - amount_cents
+        - description
+        - currency
+        - raw_row_number
+        - import_job_id
+        - preset_version_id
+        - line_hash
+      properties:
+        schema_version:
+          type: string
+          const: '1.0'
+        transaction_date:
+          type: string
+          format: date
+        value_date:
+          type: string
+          format: date
+        amount_cents:
+          type: integer
+          description: Signed integer; inflow positive, outflow negative (ADR 0003 §1).
+        description:
+          type: string
+          maxLength: 500
+        counterparty:
+          type: string
+          maxLength: 200
+        balance_cents:
+          type: integer
+        currency:
+          type: string
+          const: JPY
+        raw_row_number:
+          type: integer
+        import_job_id:
+          type: string
+        preset_version_id:
+          type: string
+        line_hash:
+          type: string
+          description: 'sha256:… of transaction_date + amount_cents + description.'
+
+    AuditLogResponse:
+      type: object
+      required: [id, action, entity_type, created_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        actor_user_id:
+          type: [integer, 'null']
+          format: int64
+        organization_id:
+          type: [integer, 'null']
+          format: int64
+        action:
+          type: string
+          description: '{entity}.{verb} e.g. organization.created.'
+        entity_type:
+          type: string
+        entity_id:
+          type: [integer, 'null']
+          format: int64
+        before:
+          type: [object, 'null']
+          additionalProperties: true
+        after:
+          type: [object, 'null']
+          additionalProperties: true
+        created_at:
+          type: string
+
+    AuditLogListResponse:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    ProblemDetails:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+    ValidationProblemDetails:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          required: [errors]
+          properties:
+            errors:
+              type: array
+              items:
+                $ref: '#/components/schemas/ValidationError'
+
+    ValidationError:
+      type: object
+      required: [field, message, code]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+        code:
+          type: string

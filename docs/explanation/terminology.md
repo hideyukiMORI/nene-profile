@@ -189,6 +189,7 @@ JSON/CSV エクスポートおよび `normalized_transactions` テーブルの�
 | operationId | Method | Path |
 |---|---|---|
 | `getHealth` | GET | `/health` |
+| `login` | POST | `/admin/auth/login` |
 | `listOrganizations` | GET | `/admin/organizations` |
 | `createOrganization` | POST | `/admin/organizations` |
 | `getOrganizationById` | GET | `/admin/organizations/{id}` |
@@ -212,6 +213,7 @@ JSON/CSV エクスポートおよび `normalized_transactions` テーブルの�
 | `listImportJobErrors` | GET | `/admin/import-jobs/{id}/errors` |
 | `exportImportJobJson` | GET | `/admin/import-jobs/{id}/export.json` |
 | `exportImportJobCsv` | GET | `/admin/import-jobs/{id}/export.csv` |
+| `listAuditLogs` | GET | `/admin/audit-logs` |
 
 MCP ツール (Phase 3+): `listMappingPresets`, `runProfileImport`
 
