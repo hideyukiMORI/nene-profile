@@ -21,6 +21,10 @@ use NeneProfile\Organization\OrganizationSlugConflictExceptionHandler;
 use NeneProfile\OrgSettings\EncodingNotSupportedExceptionHandler;
 use NeneProfile\OrgSettings\OrganizationSettingsRouteRegistrar;
 use NeneProfile\OrgSettings\OrganizationSettingsServiceProvider;
+use NeneProfile\Preset\InvalidMappingDefinitionExceptionHandler;
+use NeneProfile\Preset\MappingPresetNotFoundExceptionHandler;
+use NeneProfile\Preset\MappingPresetRouteRegistrar;
+use NeneProfile\Preset\MappingPresetServiceProvider;
 use NeneProfile\User\CannotDeleteSelfExceptionHandler;
 use NeneProfile\User\RoleNotAssignableExceptionHandler;
 use NeneProfile\User\UserEmailConflictExceptionHandler;
@@ -51,6 +55,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
             ->addProvider(new AuditServiceProvider())
             ->addProvider(new OrganizationServiceProvider())
             ->addProvider(new OrganizationSettingsServiceProvider())
+            ->addProvider(new MappingPresetServiceProvider())
             ->addProvider(new UserServiceProvider())
             ->addProvider(new AuthServiceProvider());
 
@@ -61,6 +66,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $auth         = $c->get(AuthRouteRegistrar::class);
                     $organization = $c->get(OrganizationRouteRegistrar::class);
                     $orgSettings  = $c->get(OrganizationSettingsRouteRegistrar::class);
+                    $preset       = $c->get(MappingPresetRouteRegistrar::class);
                     $user         = $c->get(UserRouteRegistrar::class);
                     $audit        = $c->get(AuditRouteRegistrar::class);
 
@@ -76,6 +82,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('OrganizationSettingsRouteRegistrar service is invalid.');
                     }
 
+                    if (!$preset instanceof MappingPresetRouteRegistrar) {
+                        throw new LogicException('MappingPresetRouteRegistrar service is invalid.');
+                    }
+
                     if (!$user instanceof UserRouteRegistrar) {
                         throw new LogicException('UserRouteRegistrar service is invalid.');
                     }
@@ -84,7 +94,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('AuditRouteRegistrar service is invalid.');
                     }
 
-                    return [$auth, $organization, $orgSettings, $user, $audit];
+                    return [$auth, $organization, $orgSettings, $preset, $user, $audit];
                 },
             )
             ->set(
@@ -98,6 +108,8 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $roleNotAssignable         = $c->get(RoleNotAssignableExceptionHandler::class);
                     $cannotDeleteSelf          = $c->get(CannotDeleteSelfExceptionHandler::class);
                     $encodingNotSupported      = $c->get(EncodingNotSupportedExceptionHandler::class);
+                    $presetNotFound            = $c->get(MappingPresetNotFoundExceptionHandler::class);
+                    $invalidDefinition         = $c->get(InvalidMappingDefinitionExceptionHandler::class);
 
                     $handlers = [
                         $invalidCredentials,
@@ -108,6 +120,8 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         $roleNotAssignable,
                         $cannotDeleteSelf,
                         $encodingNotSupported,
+                        $presetNotFound,
+                        $invalidDefinition,
                     ];
 
                     foreach ($handlers as $handler) {
