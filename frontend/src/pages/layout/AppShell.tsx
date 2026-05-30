@@ -1,20 +1,34 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom'
-import { authStore } from '@/entities/auth'
-import { useTranslation } from '@/shared/i18n'
+import { authStore, hasCapability, type Capability } from '@/entities/auth'
+import { useTranslation, type MessageKey } from '@/shared/i18n'
 import { LocaleSwitcher } from '@/shared/i18n'
 import { Button, Text } from '@/shared/ui'
 
-const NAV_ITEMS = [
+interface NavItem {
+  to: string
+  key: MessageKey
+  /** When set, the link is shown only if the session role has the capability. */
+  capability?: Capability
+}
+
+const NAV_ITEMS: readonly NavItem[] = [
+  { to: '/organizations', key: 'admin.nav.organizations', capability: 'manage_organizations' },
   { to: '/mapping-presets', key: 'admin.nav.mappingPresets' },
   { to: '/import-jobs', key: 'admin.nav.importJobs' },
   { to: '/audit-logs', key: 'admin.nav.auditLogs' },
-] as const
+]
 
 /** Authenticated layout: top bar + nav + routed content. */
 export function AppShell() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const session = authStore.getSession()
+  const role = session?.role
+
+  const navItems = NAV_ITEMS.filter(
+    (item) =>
+      item.capability === undefined || (role !== undefined && hasCapability(role, item.capability)),
+  )
 
   const signOut = (): void => {
     authStore.clearSession()
@@ -30,7 +44,7 @@ export function AppShell() {
           </Text>
         </Link>
         <nav className="flex items-center gap-inline-md">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link key={item.to} to={item.to}>
               <Text as="span" variant="body" tone="muted">
                 {t(item.key)}
