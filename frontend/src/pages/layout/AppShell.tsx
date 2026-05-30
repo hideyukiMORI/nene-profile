@@ -13,6 +13,7 @@ interface NavItem {
 
 const NAV_ITEMS: readonly NavItem[] = [
   { to: '/organizations', key: 'admin.nav.organizations', capability: 'manage_organizations' },
+  { to: '/users', key: 'admin.nav.users', capability: 'manage_users' },
   { to: '/mapping-presets', key: 'admin.nav.mappingPresets' },
   { to: '/import-jobs', key: 'admin.nav.importJobs' },
   { to: '/audit-logs', key: 'admin.nav.auditLogs' },
