@@ -8,4 +8,7 @@ alwaysApply: true
 - Canonical docs: `README.md`, `AGENTS.md`, `docs/explanation/scope-contract.md`, `docs/explanation/csv-normalization-spec.md`, `docs/explanation/output-schema.md`.
 - **NeNe Profile = CSV normalization only** (ADR 0009). No matching, dunning, or document storage.
 - Output schema v1.0 changes require ADR 0010 amendment.
-- Issue-driven; English repository docs (ADR 0008); no secrets in git.
+- Issue-driven; repository docs and commits in Japanese or English only (ADR 0011); no secrets in git.
+- Coding standards: `docs/development/coding-standards.md`. Naming violations block merge.
+- Compliance changes: run `docs/review/compliance.md` checklist. No silent row drops.
+- Term registry: `docs/explanation/terminology.md`. Identifier typos block merge.

@@ -12,7 +12,7 @@ accepted
 | **Tagline (EN)** | Map any bank CSV. One standard output. |
 | **Tagline (JA, marketing)** | どの銀行CSVも、一度マッピングすれば共通形式に。 |
 | **Domain** | Bank CSV column mapping & normalization |
-| **Canonical repo** | `hideyukiMORI/nene-profile` (private until launch) |
+| **Canonical repo** | [`hideyukiMORI/nene-profile`](https://github.com/hideyukiMORI/nene-profile) (public) |
 | **Framework** | NENE2 (PHP 8.4) |
 | **License (when public)** | MIT |
 | **PHP namespace** | `NeneProfile\` |

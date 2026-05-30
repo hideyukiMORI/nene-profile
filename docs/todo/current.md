@@ -1,16 +1,20 @@
 # Current TODO
 
-**Phase 0 — Governance and product design** (2026-05-29 bootstrap)
+**Phase 0 — Governance and product design** ✅ complete (2026-05-30)
 
-## In progress
+## Completed
 
-- [ ] Issue #1: Governance bootstrap → PR → merge
-- [ ] Issue #2: CSV spec & output schema review → PR → merge
+- [x] Issue #1: Governance bootstrap → PR #1 → merged
+- [x] Issue #2: CSV spec & output schema review → PR #2 → merged
+- [x] Issue #3: Public repository visibility + ADR 0011 bilingual policy → PR #3 → merged
 
-## Next (Phase 0+)
+## In Progress
+
+- [ ] Issue #5: コーディング標準・NENE2 継承ドキュメント整備 (this PR)
+
+## Next (Phase 1)
 
 - [ ] Issue #4: NENE2 runtime scaffold + `GET /health`
-- [ ] Issue #5: OpenAPI stub (preset + import-job endpoints)
 - [ ] Issue #6: CI
 - [ ] Coordinate Clear downstream contract with `nene-clear` team
 
@@ -18,4 +22,4 @@
 
 Parallel bootstrap with **`nene-vault`**. Clear should reference Profile export in Phase 2.
 
-Last updated: 2026-05-29
+Last updated: 2026-05-30

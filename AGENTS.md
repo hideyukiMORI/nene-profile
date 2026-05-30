@@ -1,6 +1,6 @@
 # Agent / AI Guide
 
-Entry point for AI agents working on **NeNe Profile** (private repo `nene-profile`).
+Entry point for AI agents working on **NeNe Profile** (public repo `nene-profile`).
 
 ## Domain (read first)
 
@@ -28,7 +28,7 @@ See [ADR 0009](docs/adr/0009-separate-from-nene-clear.md).
 - Do **not** add document/PDF storage — **`nene-vault`**
 - Do **not** duplicate Clear's reconciliation entities in Profile DB
 - Namespace: `NeneProfile\`; amounts: integer cents in output schema
-- **Repository docs: English only** (ADR 0008)
+- **Repository docs and commits: Japanese or English only** — no other languages (ADR 0011)
 
 ## Framework
 

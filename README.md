@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php)](https://www.php.net/)
-[![Private](https://img.shields.io/badge/status-private-red)]()
+[![Public](https://img.shields.io/badge/status-public-blue)]()
 
 **Bank CSV normalization — self-hosted for Japan SMB.**
 
@@ -39,11 +39,15 @@ matching, or dunning. Built on [NENE2](https://github.com/hideyukiMORI/NENE2).
 | Topic | Document |
 | --- | --- |
 | **Scope contract (GOAL / DO / DON'T)** | [`docs/explanation/scope-contract.md`](./docs/explanation/scope-contract.md) |
+| **Compliance & integrity rules (binding)** | [`docs/explanation/accounting-compliance.md`](./docs/explanation/accounting-compliance.md) |
 | **CSV normalization spec (binding)** | [`docs/explanation/csv-normalization-spec.md`](./docs/explanation/csv-normalization-spec.md) |
 | **Standard output schema** | [`docs/explanation/output-schema.md`](./docs/explanation/output-schema.md) |
+| **Domain model** | [`docs/explanation/domain-model.md`](./docs/explanation/domain-model.md) |
+| **Glossary** | [`docs/explanation/glossary.md`](./docs/explanation/glossary.md) |
 | **Domain boundary** | [`docs/explanation/scope-boundary.md`](./docs/explanation/scope-boundary.md) |
 | **Clear downstream contract** | [`docs/integrations/clear-downstream-contract.md`](./docs/integrations/clear-downstream-contract.md) |
 | **Agents** | [`AGENTS.md`](./AGENTS.md) |
+| **Language policy (JP/EN)** | [`docs/adr/0011-bilingual-jp-en-documentation.md`](./docs/adr/0011-bilingual-jp-en-documentation.md) |
 
 ## Status
 
