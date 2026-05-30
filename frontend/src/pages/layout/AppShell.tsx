@@ -16,6 +16,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { to: '/users', key: 'admin.nav.users', capability: 'manage_users' },
   { to: '/mapping-presets', key: 'admin.nav.mappingPresets' },
   { to: '/import-jobs', key: 'admin.nav.importJobs' },
+  { to: '/settings', key: 'admin.nav.settings', capability: 'manage_organization_settings' },
   { to: '/audit-logs', key: 'admin.nav.auditLogs' },
 ]
 
