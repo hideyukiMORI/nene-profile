@@ -189,18 +189,39 @@ useQuery({
 
 ---
 
-## 国際化 (ja + en のみ — ADR 0011)
+## 国際化 (ja + en のみ — ADR 0011) — **実装済み**
+
+`frontend/src/shared/i18n/` にメッセージカタログ基盤を実装済み（Issue #13）。
+
+| モジュール | 役割 |
+|---|---|
+| `messages/ja.ts` | **正本カタログ** — 全画面の文言を最初にここへ定義（`MessageKey` の型ソース）|
+| `messages/en.ts` | 英語 `Partial` — 不足キーは実行時に ja へフォールバック |
+| `messages/catalog.test.ts` | **整合性ガード** — en キー ⊆ ja キー、空値なし、補間プレースホルダ一致 |
+| `translate.ts` | 純粋関数: カタログ解決 + ja フォールバック + `{{param}}` 補間 |
+| `locales.ts` | `SupportedLocale`, `DEFAULT_LOCALE`, `resolveLocale`, `LOCALES` |
+| `i18n-context.tsx` | `I18nProvider` — localStorage 永続化 + navigator 検出 |
+| `use-translation.ts` | `useTranslation()` フック |
+| `LocaleSwitcher.tsx` | ja/en 切替ボタン群 |
 
 ```ts
-// shared/i18n/locales.ts
 type SupportedLocale = 'ja' | 'en'
 ```
 
-- ユーザー向け文字列はハードコード禁止 → `t('admin.presets.title')`
-- キー命名: `admin.{feature}.{element}` / `common.{element}`
+- **ユーザー向け文字列はハードコード禁止** → 必ず `t('admin.mappingPresets.title')`
+- キー命名: `{area}.{feature}.{element}`（例: `admin.importJobs.status.completed`）
 - `ja` が正本（authoritative）; `en` は `Partial`; 不足キーは `ja` にフォールバック
-- 検出順序: `localStorage['nene-locale']` → `navigator.language` → `ja`
+- 検出順序: `localStorage['nene-profile-locale']` → `navigator.language` → `ja`
+- 言語切替は再レンダリングのみで即時反映（リロード・通信なし）
+- `catalog.test.ts` が ja/en の乖離をビルド時に検出
 - ADR 0011 を更新せずに第三のロケールを追加しない
+
+### 文言の追加手順
+
+1. `messages/ja.ts` にキーを追加（正本）
+2. `messages/en.ts` に英訳を追加
+3. コンポーネントで `t('your.key')` 参照（リテラル直書き禁止）
+4. `npm run test` が ja/en 整合性を強制
 
 ---
 
