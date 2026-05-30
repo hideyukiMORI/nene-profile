@@ -1,0 +1,64 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'docs/openapi/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpstan.neon.dist'
+      - 'phpunit.xml.dist'
+      - '.php-cs-fixer.php'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'docs/openapi/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpstan.neon.dist'
+      - 'phpunit.xml.dist'
+      - '.php-cs-fixer.php'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, mbstring, intl
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Clone NENE2 (local path dependency)
+        run: git clone --depth=1 https://github.com/hideyukiMORI/NENE2.git ../NENE2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Run checks
+        run: composer check
