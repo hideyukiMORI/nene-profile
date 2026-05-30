@@ -4,6 +4,7 @@ import { HomePage } from '@/pages/home/HomePage'
 import { AppShell } from '@/pages/layout/AppShell'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
+import { OrganizationsPage } from '@/pages/organizations/OrganizationsPage'
 import { RequireAuth } from '@/shared/auth/RequireAuth'
 
 function AdminShell() {
@@ -20,7 +21,10 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <AdminShell />,
-    children: [{ index: true, element: <HomePage /> }],
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: 'organizations', element: <OrganizationsPage /> },
+    ],
   },
   { path: '*', element: <NotFoundPage /> },
 ])
