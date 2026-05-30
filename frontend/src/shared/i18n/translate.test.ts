@@ -24,9 +24,9 @@ describe('translate', () => {
     const catalog: MessageCatalog = {
       'common.pagination.summary': '{{from}}-{{to}} of {{total}}',
     }
-    expect(
-      translate(catalog, 'common.pagination.summary', { from: 1, to: 20, total: 100 }),
-    ).toBe('1-20 of 100')
+    expect(translate(catalog, 'common.pagination.summary', { from: 1, to: 20, total: 100 })).toBe(
+      '1-20 of 100',
+    )
   })
 
   it('leaves an unmatched placeholder untouched', () => {
