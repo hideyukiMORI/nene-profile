@@ -69,8 +69,21 @@ thin adapter until Profile MVP lands — document in Clear repo).
 
 ---
 
+## Compliance obligation
+
+Profile's primary compliance obligation is **transform fidelity and provenance** —
+not 電帳法 archiving. See
+[`accounting-compliance.md`](./accounting-compliance.md) for binding rules.
+
+The operator bears the 電帳法 retention obligation for original bank data;
+Profile provides the building blocks (immutable original storage, per-row
+traceability, searchable normalized output). NeNe Vault is the dedicated archive.
+
 ## Related
 
+- **Compliance (binding):** [`accounting-compliance.md`](./accounting-compliance.md)
+- ADR 0003: transform fidelity rules (amount sign, date, encoding)
+- ADR 0004: original file immutability and provenance
 - ADR 0009, ADR 0010 (output schema stability)
 - [`csv-normalization-spec.md`](./csv-normalization-spec.md)
 
