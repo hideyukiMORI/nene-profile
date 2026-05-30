@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneProfile\User;
 
+use Nene2\Database\DatabaseConstraintException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 
 final readonly class PdoUserRepository implements UserRepositoryInterface
@@ -79,19 +80,28 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
     public function save(User $user): int
     {
         $now = date('Y-m-d H:i:s');
-        $this->query->execute(
-            'INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [
-                $user->email,
-                $user->passwordHash,
-                $user->role,
-                $user->organizationId,
-                $user->status,
-                $now,
-                $now,
-            ],
-        );
+
+        try {
+            $this->query->execute(
+                'INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [
+                    $user->email,
+                    $user->passwordHash,
+                    $user->role,
+                    $user->organizationId,
+                    $user->status,
+                    $now,
+                    $now,
+                ],
+            );
+        } catch (DatabaseConstraintException) {
+            // Race backstop: the UseCase pre-checks emailExists(), but a concurrent
+            // insert can still hit the unique(email) constraint. The executor wraps
+            // the driver PDOException into DatabaseConstraintException (not a
+            // PDOException), so we catch that type here.
+            throw new UserEmailConflictException($user->email);
+        }
 
         return $this->query->lastInsertId();
     }
