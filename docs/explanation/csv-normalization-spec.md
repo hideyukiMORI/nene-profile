@@ -35,7 +35,7 @@ A **preset** (`mapping_preset`) contains:
   "columns": {
     "transaction_date": { "source": "日付", "transform": "date_ymd_slash" },
     "value_date": { "source": "起算日", "transform": "date_ymd_slash", "optional": true },
-    "amount_cents": { "source": ["入金金额", "出金金额"], "transform": "debit_credit_to_signed_cents" },
+    "amount_cents": { "source": ["入金金額", "出金金額"], "transform": "debit_credit_to_signed_cents" },
     "description": { "source": "摘要", "transform": "trim" },
     "balance_cents": { "source": "残高", "transform": "amount_yen_to_cents", "optional": true },
     "counterparty": { "source": "相手先", "transform": "trim", "optional": true }

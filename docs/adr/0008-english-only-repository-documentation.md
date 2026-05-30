@@ -2,11 +2,11 @@
 
 ## Status
 
-accepted
+superseded by [ADR 0011](./0011-bilingual-jp-en-documentation.md)
 
 ## Context
 
-NeNe Clear serves Japan-registered businesses subject to Japanese tax and
+NeNe Profile serves Japan-registered businesses subject to Japanese tax and
 invoice law. Operators may use a Japanese or English **admin UI** (ADR 0005),
 but **engineering documentation** is read by contributors, AI agents, and
 international reviewers — including accounting advisors evaluating compliance
@@ -58,4 +58,4 @@ All **repository documentation** is **English only**:
 - `docs/inheritance-from-nene2.md` — language policy row updated
 - Issue: `#3`
 - Supersedes: informal "Japanese allowed in commits/rules" wording
-- Superseded by: none
+- Superseded by: [ADR 0011](./0011-bilingual-jp-en-documentation.md)

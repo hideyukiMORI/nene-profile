@@ -6,18 +6,18 @@ NeNe Profile is built through small, Issue-driven changes. This document is the 
 
 | Topic | Document |
 | --- | --- |
-| NENE2 inheritance map | `docs/inheritance-from-nene2.md` |
-| Sibling product boundaries | `docs/integrations/sibling-products.md` |
-| Workflow | `docs/workflow.md` |
-| Coding standards | `docs/development/coding-standards.md` |
-| Naming conventions | `docs/development/naming-conventions.md` |
-| Glossary | `docs/explanation/glossary.md` |
-| Backend standards (PHP/API) | `docs/development/backend-standards.md` |
-| Commit messages | `docs/development/commit-conventions.md` |
-| AI tools | `docs/integrations/ai-tools.md` |
-| Agent entry point | `AGENTS.md` |
-| Roadmap | `docs/roadmap.md` |
-| Current work | `docs/todo/current.md` |
+| NENE2 継承マップ | [`docs/inheritance-from-nene2.md`](inheritance-from-nene2.md) |
+| コーディング標準（インデックス）| [`docs/development/coding-standards.md`](development/coding-standards.md) |
+| バックエンド標準 (PHP/API) | [`docs/development/backend-standards.md`](development/backend-standards.md) |
+| 命名規則 | [`docs/development/naming-conventions.md`](development/naming-conventions.md) |
+| 正規識別子レジストリ | [`docs/explanation/terminology.md`](explanation/terminology.md) |
+| 用語集 | [`docs/explanation/glossary.md`](explanation/glossary.md) |
+| コンプライアンス規則 (binding) | [`docs/explanation/accounting-compliance.md`](explanation/accounting-compliance.md) |
+| コミットメッセージ規約 | [`docs/development/commit-conventions.md`](development/commit-conventions.md) |
+| ワークフロー | [`docs/workflow.md`](workflow.md) |
+| AI エージェント入口 | [`AGENTS.md`](../AGENTS.md) |
+| ロードマップ | [`docs/roadmap.md`](roadmap.md) |
+| 現在のタスク | [`docs/todo/current.md`](todo/current.md) |
 
 ## Collaboration Policy
 
@@ -40,8 +40,8 @@ Do not commit passwords, tokens, private URLs, production credentials, or local 
 Sensitive keys for this product include:
 
 - Admin JWT secrets
-- Invoice upstream API bearer token (and optional NeNe Records / NeNe Concierge tokens)
-- SMTP credentials for dunning email delivery
+- Clear bearer token for downstream handoff (Phase 3, optional)
+- Webhook secrets (Phase 3, optional)
 
 ## Engineering Theme
 
@@ -50,9 +50,9 @@ NeNe Profile should stay readable, secure, and self-hostable:
 - strict, typed, explicit boundaries (inherited from NENE2)
 - decoupled use cases and infrastructure
 - OpenAPI contracts before client assumptions
-- Reconciliation/dunning compliance enforced at the API layer; no quote/invoice/tax/PDF logic (ADR 0009)
+- CSV normalization only — no reconciliation, dunning, document storage, or invoice logic (ADR 0009)
 - MCP access only through documented HTTP boundaries
-- **never** merge into or embed inside NeNe Records (ADR 0002)
+- **never** merge into or embed inside sibling NeNe products (ADR 0002)
 
 ## Upstream Framework
 
