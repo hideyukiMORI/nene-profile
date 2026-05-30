@@ -18,6 +18,9 @@ use NeneProfile\Organization\OrganizationNotFoundExceptionHandler;
 use NeneProfile\Organization\OrganizationRouteRegistrar;
 use NeneProfile\Organization\OrganizationServiceProvider;
 use NeneProfile\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneProfile\OrgSettings\EncodingNotSupportedExceptionHandler;
+use NeneProfile\OrgSettings\OrganizationSettingsRouteRegistrar;
+use NeneProfile\OrgSettings\OrganizationSettingsServiceProvider;
 use NeneProfile\User\CannotDeleteSelfExceptionHandler;
 use NeneProfile\User\RoleNotAssignableExceptionHandler;
 use NeneProfile\User\UserEmailConflictExceptionHandler;
@@ -47,6 +50,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
         $builder
             ->addProvider(new AuditServiceProvider())
             ->addProvider(new OrganizationServiceProvider())
+            ->addProvider(new OrganizationSettingsServiceProvider())
             ->addProvider(new UserServiceProvider())
             ->addProvider(new AuthServiceProvider());
 
@@ -56,6 +60,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                 static function (ContainerInterface $c): array {
                     $auth         = $c->get(AuthRouteRegistrar::class);
                     $organization = $c->get(OrganizationRouteRegistrar::class);
+                    $orgSettings  = $c->get(OrganizationSettingsRouteRegistrar::class);
                     $user         = $c->get(UserRouteRegistrar::class);
                     $audit        = $c->get(AuditRouteRegistrar::class);
 
@@ -67,6 +72,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('OrganizationRouteRegistrar service is invalid.');
                     }
 
+                    if (!$orgSettings instanceof OrganizationSettingsRouteRegistrar) {
+                        throw new LogicException('OrganizationSettingsRouteRegistrar service is invalid.');
+                    }
+
                     if (!$user instanceof UserRouteRegistrar) {
                         throw new LogicException('UserRouteRegistrar service is invalid.');
                     }
@@ -75,7 +84,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('AuditRouteRegistrar service is invalid.');
                     }
 
-                    return [$auth, $organization, $user, $audit];
+                    return [$auth, $organization, $orgSettings, $user, $audit];
                 },
             )
             ->set(
@@ -88,6 +97,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $userEmailConflict         = $c->get(UserEmailConflictExceptionHandler::class);
                     $roleNotAssignable         = $c->get(RoleNotAssignableExceptionHandler::class);
                     $cannotDeleteSelf          = $c->get(CannotDeleteSelfExceptionHandler::class);
+                    $encodingNotSupported      = $c->get(EncodingNotSupportedExceptionHandler::class);
 
                     $handlers = [
                         $invalidCredentials,
@@ -97,6 +107,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         $userEmailConflict,
                         $roleNotAssignable,
                         $cannotDeleteSelf,
+                        $encodingNotSupported,
                     ];
 
                     foreach ($handlers as $handler) {
