@@ -40,6 +40,19 @@ final class AuthContext
         return is_int($value) ? $value : null;
     }
 
+    /**
+     * The organization resolved by OrgResolverMiddleware (`nene2.org.id`).
+     * This is the authoritative tenant scope for org-scoped resources — use it
+     * rather than the JWT `org_id` so superadmin operating within a resolved
+     * tenant is scoped correctly.
+     */
+    public static function resolvedOrganizationId(ServerRequestInterface $request): ?int
+    {
+        $value = $request->getAttribute('nene2.org.id');
+
+        return is_int($value) ? $value : null;
+    }
+
     private static function claim(ServerRequestInterface $request, string $key): mixed
     {
         $claims = $request->getAttribute(self::CLAIMS_ATTRIBUTE);

@@ -6,11 +6,11 @@ namespace NeneProfile\Auth;
 
 use LogicException;
 use Nene2\Auth\TokenIssuerInterface;
-use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use NeneProfile\User\UserRepositoryInterface;
 use Psr\Container\ContainerInterface;
 
 final readonly class AuthServiceProvider implements ServiceProviderInterface
@@ -18,18 +18,6 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
     public function register(ContainerBuilder $builder): void
     {
         $builder
-            ->set(
-                UserRepositoryInterface::class,
-                static function (ContainerInterface $c): UserRepositoryInterface {
-                    $query = $c->get(DatabaseQueryExecutorInterface::class);
-
-                    if (!$query instanceof DatabaseQueryExecutorInterface) {
-                        throw new LogicException('Database query executor service is invalid.');
-                    }
-
-                    return new PdoUserRepository($query);
-                },
-            )
             ->set(
                 LoginUseCaseInterface::class,
                 static function (ContainerInterface $c): LoginUseCaseInterface {
