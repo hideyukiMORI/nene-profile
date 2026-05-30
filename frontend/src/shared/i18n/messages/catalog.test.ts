@@ -45,7 +45,7 @@ describe('message catalog integrity', () => {
     for (const key of enKeys) {
       const jaValue = jaMessages[key as keyof typeof jaMessages]
       const enValue = enMessages[key as keyof typeof enMessages]
-      if (jaValue === undefined || enValue === undefined) continue
+      if (enValue === undefined) continue
       expect(extract(enValue), `placeholders differ for "${key}"`).toEqual(extract(jaValue))
     }
   })

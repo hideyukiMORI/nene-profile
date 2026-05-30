@@ -18,7 +18,9 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  act(() => root.unmount())
+  act(() => {
+    root.unmount()
+  })
   container.remove()
   vi.restoreAllMocks()
 })

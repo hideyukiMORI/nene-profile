@@ -1,0 +1,2 @@
+/* The active theme. Replace this single import to retheme the whole app. */
+@import './themes/default.css';

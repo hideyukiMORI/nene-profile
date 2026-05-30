@@ -10,7 +10,7 @@ export type SupportedLocale = 'ja' | 'en'
 /** ja is the primary/authoritative locale (ADR 0011). */
 export const DEFAULT_LOCALE: SupportedLocale = 'ja'
 
-export interface LocaleMeta {
+interface LocaleMeta {
   readonly id: SupportedLocale
   readonly labelKey: 'common.locale.ja' | 'common.locale.en'
 }

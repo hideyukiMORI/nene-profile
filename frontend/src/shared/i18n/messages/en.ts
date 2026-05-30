@@ -81,8 +81,7 @@ export const enMessages: MessageCatalog = {
   'admin.organizations.create.slugRequired': 'Slug is required.',
   'admin.organizations.create.slugInvalid':
     'Slug may contain only lowercase letters, digits, and hyphens.',
-  'admin.organizations.create.error':
-    'Could not create the organization. Please check your input.',
+  'admin.organizations.create.error': 'Could not create the organization. Please check your input.',
   'admin.organizations.delete.title': 'Delete this organization?',
   'admin.organizations.delete.message':
     'This will delete "{{name}}". This action cannot be undone.',

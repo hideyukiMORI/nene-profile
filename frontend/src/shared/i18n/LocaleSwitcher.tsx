@@ -1,4 +1,4 @@
-import { LOCALES, type SupportedLocale } from './locales'
+import { LOCALES } from './locales'
 import { useTranslation } from './use-translation'
 
 /**
@@ -20,7 +20,9 @@ export function LocaleSwitcher() {
             key={meta.id}
             type="button"
             aria-pressed={active}
-            onClick={() => handleSelect(setLocale, meta.id)}
+            onClick={() => {
+              setLocale(meta.id)
+            }}
           >
             {t(meta.labelKey)}
           </button>
@@ -28,11 +30,4 @@ export function LocaleSwitcher() {
       })}
     </div>
   )
-}
-
-function handleSelect(
-  setLocale: (locale: SupportedLocale) => void,
-  next: SupportedLocale,
-): void {
-  setLocale(next)
 }
