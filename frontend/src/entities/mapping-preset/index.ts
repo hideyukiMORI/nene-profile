@@ -1,9 +1,11 @@
-export { useMappingPresets, mappingPresetKeys } from './queries'
-export { useCreateMappingPreset, useDeleteMappingPreset } from './mutations'
+export { useMappingPresets, useMappingPreset, mappingPresetKeys } from './queries'
+export { useCreateMappingPreset, useUpdateMappingPreset, useDeleteMappingPreset } from './mutations'
 export type {
   MappingPreset,
+  MappingPresetDetail,
   MappingPresetList,
   CreateMappingPresetInput,
+  UpdateMappingPresetInput,
   ColumnMappingInput,
   PageParams,
 } from './model'

@@ -46,10 +46,33 @@ export interface CreateMappingPresetInput {
   columns: readonly ColumnMappingInput[]
 }
 
+export interface UpdateMappingPresetInput extends CreateMappingPresetInput {
+  id: number
+}
+
+/** Full preset with the definition parsed into editable form values. */
+export interface MappingPresetDetail extends MappingPreset {
+  encoding: Encoding
+  delimiter: Delimiter
+  headerRowIndex: number
+  yearPivot: number
+  columns: ColumnMappingInput[]
+}
+
 export interface PageParams {
   limit: number
   offset: number
 }
+
+/** StandardTransaction fields, in display order (mirrors the API column keys). */
+const STANDARD_FIELD_ORDER: readonly StandardField[] = [
+  'transaction_date',
+  'value_date',
+  'amount',
+  'description',
+  'counterparty',
+  'balance',
+]
 
 export function toMappingPreset(dto: MappingPresetDto): MappingPreset {
   return {
@@ -70,6 +93,35 @@ export function toMappingPresetList(dto: MappingPresetListDto): MappingPresetLis
     total: dto.total,
     limit: dto.limit,
     offset: dto.offset,
+  }
+}
+
+function columnSource(source: MappingColumnDto['source']): string {
+  return Array.isArray(source) ? (source[0] ?? '') : source
+}
+
+export function toMappingPresetDetail(dto: MappingPresetDto): MappingPresetDetail {
+  const def = dto.definition
+  const defColumns = def?.columns ?? {}
+  const columns: ColumnMappingInput[] = STANDARD_FIELD_ORDER.map((field) => {
+    const column = defColumns[field]
+    return column !== undefined
+      ? {
+          field,
+          source: columnSource(column.source),
+          transform: column.transform,
+          optional: column.optional ?? false,
+        }
+      : { field, source: '', transform: 'trim', optional: false }
+  })
+
+  return {
+    ...toMappingPreset(dto),
+    encoding: def?.encoding ?? 'auto',
+    delimiter: def?.delimiter ?? 'auto',
+    headerRowIndex: def?.header_row_index ?? 0,
+    yearPivot: def?.year_pivot ?? 50,
+    columns,
   }
 }
 

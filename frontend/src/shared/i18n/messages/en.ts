@@ -150,6 +150,9 @@ export const enMessages: MessageCatalog = {
   'admin.mappingPresets.create.nameRequired': 'Name is required.',
   'admin.mappingPresets.create.bankLabelRequired': 'Bank label is required.',
   'admin.mappingPresets.create.error': 'Could not create the preset.',
+  'admin.mappingPresets.edit.title': 'Edit preset (new version)',
+  'admin.mappingPresets.edit.submit': 'Update',
+  'admin.mappingPresets.edit.error': 'Could not update the preset.',
   'admin.mappingPresets.delete.title': 'Delete this preset?',
   'admin.mappingPresets.delete.message':
     'This will delete "{{name}}". This action cannot be undone.',
