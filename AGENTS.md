@@ -1,6 +1,6 @@
 # Agent / AI Guide
 
-Entry point for AI agents working on **NeNe Profile** (private repo `nene-profile`).
+Entry point for AI agents working on **NeNe Profile** (public repo `nene-profile`).
 
 ## Domain (read first)
 

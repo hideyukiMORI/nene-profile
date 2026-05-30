@@ -7,7 +7,7 @@ before runtime code.
 
 ## Acceptance Criteria
 
-- [x] GitHub repository created (`hideyukiMORI/nene-profile`, private)
+- [x] GitHub repository created (`hideyukiMORI/nene-profile`, public since 2026-05-30)
 - [x] Scope contract — binding
 - [x] CSV normalization spec — binding
 - [x] Standard output schema v1.0 — binding
