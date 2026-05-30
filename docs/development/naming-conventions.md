@@ -214,15 +214,32 @@ SQL は `Pdo*Repository` クラス内にのみ記述。
 
 ---
 
-## 11. 禁止パターン
+## 11. 禁止パターン（ゼロ許容）
 
-- **`terminology.md` に登録された用語のタイポ・スペルバリエーション** — マージブロック
+### 識別子（最重要 — すべてマージブロック）
+
+> 識別子を書く前に **必ず** `docs/explanation/terminology.md` を確認すること。
+> 「ほぼ合っている」「よく似ている」は存在しない。
+
+- **`terminology.md` 登録済み用語のタイポ・スペルバリエーション・略称** — マージブロック
 - **未登録識別子** — 同 PR でレジストリに追加しないまま使用することは禁止
-- レイヤーファースト フォルダ (`src/Handlers/`, `src/Repositories/`)
+- `terminology.md` §14「よくある禁止スペル早見表」に掲載の禁止形式の使用
+
+### 構造・配置
+
+- レイヤーファーストフォルダ (`src/Handlers/`, `src/Repositories/`, `src/UseCases/`)
 - `Pdo*Repository` 外の SQL
-- 公開 JSON プロパティ名の camelCase
+- Handler 内のビジネスロジック
+- UseCase 内の PDO・raw HTTP アクセス
+
+### JSON・API
+
+- 公開 JSON プロパティ名の camelCase（`amount_cents` でなく `amountCents` など）
 - DB/JSON/テストでの金額フロート・DECIMAL
 - リリース済み `operationId` のリネーム
+
+### スコープ
+
 - 兄弟製品 (nene-clear 等) へのドメインロジック埋め込み
 - サイレントな行ドロップ（全エラーは `import_job_errors` に記録）
 
