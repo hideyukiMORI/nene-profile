@@ -44,6 +44,12 @@ export default tseslint.config(
       'coverage',
       'src/shared/api/schema.gen.ts',
       'public/mockServiceWorker.js',
+      // E2E specs run under Playwright's own toolchain, not the app's strict
+      // typed config; lint/format is handled by Prettier.
+      'e2e',
+      'playwright.config.ts',
+      'playwright-report',
+      'test-results',
     ],
   },
   {
