@@ -14,6 +14,9 @@ use NeneProfile\Audit\AuditServiceProvider;
 use NeneProfile\Auth\AuthRouteRegistrar;
 use NeneProfile\Auth\AuthServiceProvider;
 use NeneProfile\Auth\InvalidCredentialsExceptionHandler;
+use NeneProfile\ImportJob\ImportJobNotFoundExceptionHandler;
+use NeneProfile\ImportJob\ImportJobRouteRegistrar;
+use NeneProfile\ImportJob\ImportJobServiceProvider;
 use NeneProfile\Organization\OrganizationNotFoundExceptionHandler;
 use NeneProfile\Organization\OrganizationRouteRegistrar;
 use NeneProfile\Organization\OrganizationServiceProvider;
@@ -56,6 +59,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
             ->addProvider(new OrganizationServiceProvider())
             ->addProvider(new OrganizationSettingsServiceProvider())
             ->addProvider(new MappingPresetServiceProvider())
+            ->addProvider(new ImportJobServiceProvider())
             ->addProvider(new UserServiceProvider())
             ->addProvider(new AuthServiceProvider());
 
@@ -67,6 +71,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $organization = $c->get(OrganizationRouteRegistrar::class);
                     $orgSettings  = $c->get(OrganizationSettingsRouteRegistrar::class);
                     $preset       = $c->get(MappingPresetRouteRegistrar::class);
+                    $importJob    = $c->get(ImportJobRouteRegistrar::class);
                     $user         = $c->get(UserRouteRegistrar::class);
                     $audit        = $c->get(AuditRouteRegistrar::class);
 
@@ -86,6 +91,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('MappingPresetRouteRegistrar service is invalid.');
                     }
 
+                    if (!$importJob instanceof ImportJobRouteRegistrar) {
+                        throw new LogicException('ImportJobRouteRegistrar service is invalid.');
+                    }
+
                     if (!$user instanceof UserRouteRegistrar) {
                         throw new LogicException('UserRouteRegistrar service is invalid.');
                     }
@@ -94,7 +103,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('AuditRouteRegistrar service is invalid.');
                     }
 
-                    return [$auth, $organization, $orgSettings, $preset, $user, $audit];
+                    return [$auth, $organization, $orgSettings, $preset, $importJob, $user, $audit];
                 },
             )
             ->set(
@@ -110,6 +119,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $encodingNotSupported      = $c->get(EncodingNotSupportedExceptionHandler::class);
                     $presetNotFound            = $c->get(MappingPresetNotFoundExceptionHandler::class);
                     $invalidDefinition         = $c->get(InvalidMappingDefinitionExceptionHandler::class);
+                    $importJobNotFound         = $c->get(ImportJobNotFoundExceptionHandler::class);
 
                     $handlers = [
                         $invalidCredentials,
@@ -122,6 +132,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         $encodingNotSupported,
                         $presetNotFound,
                         $invalidDefinition,
+                        $importJobNotFound,
                     ];
 
                     foreach ($handlers as $handler) {
