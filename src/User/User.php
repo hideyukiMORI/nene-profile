@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NeneProfile\Auth;
+namespace NeneProfile\User;
 
 final readonly class User
 {

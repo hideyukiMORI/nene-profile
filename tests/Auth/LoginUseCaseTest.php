@@ -8,6 +8,8 @@ use Nene2\Auth\TokenIssuerInterface;
 use NeneProfile\Auth\InvalidCredentialsException;
 use NeneProfile\Auth\LoginInput;
 use NeneProfile\Auth\LoginUseCase;
+use NeneProfile\Tests\User\InMemoryUserRepository;
+use NeneProfile\User\User;
 use PHPUnit\Framework\TestCase;
 
 final class LoginUseCaseTest extends TestCase
@@ -30,14 +32,21 @@ final class LoginUseCaseTest extends TestCase
         $this->useCase = new LoginUseCase($this->repo, $tokenIssuer);
     }
 
+    private function seedUser(string $email, string $password, string $role, ?int $organizationId): void
+    {
+        $this->repo->seed(new User(
+            id: 0,
+            email: $email,
+            passwordHash: password_hash($password, PASSWORD_BCRYPT),
+            role: $role,
+            organizationId: $organizationId,
+            status: 'active',
+        ));
+    }
+
     public function test_login_succeeds_with_valid_credentials(): void
     {
-        $this->repo->create(
-            email: 'admin@example.com',
-            passwordHash: password_hash('secret', PASSWORD_BCRYPT),
-            role: 'admin',
-            organizationId: 1,
-        );
+        $this->seedUser('admin@example.com', 'secret', 'admin', 1);
 
         $output = $this->useCase->execute(new LoginInput(
             email: 'admin@example.com',
@@ -53,12 +62,7 @@ final class LoginUseCaseTest extends TestCase
 
     public function test_superadmin_login_has_null_org_id(): void
     {
-        $this->repo->create(
-            email: 'superadmin@example.com',
-            passwordHash: password_hash('secret', PASSWORD_BCRYPT),
-            role: 'superadmin',
-            organizationId: null,
-        );
+        $this->seedUser('superadmin@example.com', 'secret', 'superadmin', null);
 
         $output = $this->useCase->execute(new LoginInput(
             email: 'superadmin@example.com',
@@ -71,12 +75,7 @@ final class LoginUseCaseTest extends TestCase
 
     public function test_throws_on_wrong_password(): void
     {
-        $this->repo->create(
-            email: 'admin@example.com',
-            passwordHash: password_hash('secret', PASSWORD_BCRYPT),
-            role: 'admin',
-            organizationId: 1,
-        );
+        $this->seedUser('admin@example.com', 'secret', 'admin', 1);
 
         $this->expectException(InvalidCredentialsException::class);
 

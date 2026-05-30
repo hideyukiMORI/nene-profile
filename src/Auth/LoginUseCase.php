@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\Auth;
 
 use Nene2\Auth\TokenIssuerInterface;
+use NeneProfile\User\UserRepositoryInterface;
 
 final readonly class LoginUseCase implements LoginUseCaseInterface
 {

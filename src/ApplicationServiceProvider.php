@@ -18,6 +18,12 @@ use NeneProfile\Organization\OrganizationNotFoundExceptionHandler;
 use NeneProfile\Organization\OrganizationRouteRegistrar;
 use NeneProfile\Organization\OrganizationServiceProvider;
 use NeneProfile\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneProfile\User\CannotDeleteSelfExceptionHandler;
+use NeneProfile\User\RoleNotAssignableExceptionHandler;
+use NeneProfile\User\UserEmailConflictExceptionHandler;
+use NeneProfile\User\UserNotFoundExceptionHandler;
+use NeneProfile\User\UserRouteRegistrar;
+use NeneProfile\User\UserServiceProvider;
 use Psr\Container\ContainerInterface;
 
 final readonly class ApplicationServiceProvider implements ServiceProviderInterface
@@ -41,6 +47,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
         $builder
             ->addProvider(new AuditServiceProvider())
             ->addProvider(new OrganizationServiceProvider())
+            ->addProvider(new UserServiceProvider())
             ->addProvider(new AuthServiceProvider());
 
         $builder
@@ -49,6 +56,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                 static function (ContainerInterface $c): array {
                     $auth         = $c->get(AuthRouteRegistrar::class);
                     $organization = $c->get(OrganizationRouteRegistrar::class);
+                    $user         = $c->get(UserRouteRegistrar::class);
                     $audit        = $c->get(AuditRouteRegistrar::class);
 
                     if (!$auth instanceof AuthRouteRegistrar) {
@@ -59,11 +67,15 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('OrganizationRouteRegistrar service is invalid.');
                     }
 
+                    if (!$user instanceof UserRouteRegistrar) {
+                        throw new LogicException('UserRouteRegistrar service is invalid.');
+                    }
+
                     if (!$audit instanceof AuditRouteRegistrar) {
                         throw new LogicException('AuditRouteRegistrar service is invalid.');
                     }
 
-                    return [$auth, $organization, $audit];
+                    return [$auth, $organization, $user, $audit];
                 },
             )
             ->set(
@@ -72,22 +84,28 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invalidCredentials        = $c->get(InvalidCredentialsExceptionHandler::class);
                     $organizationNotFound      = $c->get(OrganizationNotFoundExceptionHandler::class);
                     $organizationSlugConflict  = $c->get(OrganizationSlugConflictExceptionHandler::class);
+                    $userNotFound              = $c->get(UserNotFoundExceptionHandler::class);
+                    $userEmailConflict         = $c->get(UserEmailConflictExceptionHandler::class);
+                    $roleNotAssignable         = $c->get(RoleNotAssignableExceptionHandler::class);
+                    $cannotDeleteSelf          = $c->get(CannotDeleteSelfExceptionHandler::class);
 
-                    foreach ([
+                    $handlers = [
                         $invalidCredentials,
                         $organizationNotFound,
                         $organizationSlugConflict,
-                    ] as $handler) {
+                        $userNotFound,
+                        $userEmailConflict,
+                        $roleNotAssignable,
+                        $cannotDeleteSelf,
+                    ];
+
+                    foreach ($handlers as $handler) {
                         if (!$handler instanceof DomainExceptionHandlerInterface) {
                             throw new LogicException('Exception handler service is invalid.');
                         }
                     }
 
-                    return [
-                        $invalidCredentials,
-                        $organizationNotFound,
-                        $organizationSlugConflict,
-                    ];
+                    return $handlers;
                 },
             );
     }
