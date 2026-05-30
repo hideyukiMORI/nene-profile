@@ -13,6 +13,7 @@ use Nene2\Http\JsonResponseFactory;
 use NeneProfile\Audit\AuditRecorderInterface;
 use NeneProfile\Preset\MappingPresetRepositoryInterface;
 use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
+use NeneProfile\Support\Env;
 use NeneProfile\Transformer\TransformerRegistry;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -38,7 +39,7 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
             ->set(
                 FileStorageInterface::class,
                 static function (ContainerInterface $c): FileStorageInterface {
-                    $base = (string) (getenv('NENE_PROFILE_STORAGE_PATH') ?: '');
+                    $base = Env::get('NENE_PROFILE_STORAGE_PATH');
                     if ($base === '') {
                         $base = dirname(__DIR__, 2) . '/storage/uploads';
                     }

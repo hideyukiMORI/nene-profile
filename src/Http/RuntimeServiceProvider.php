@@ -35,6 +35,7 @@ use NeneProfile\Organization\Resolution\EnvResolutionStrategy;
 use NeneProfile\Organization\Resolution\OrgResolverMiddleware;
 use NeneProfile\Organization\Resolution\PathPrefixResolutionStrategy;
 use NeneProfile\Organization\Resolution\SubdomainResolutionStrategy;
+use NeneProfile\Support\Env;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -310,9 +311,9 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                     /** @var list<DomainExceptionHandlerInterface> $exceptionHandlers */
                     /** @var list<callable(\Nene2\Routing\Router): void> $routeRegistrars */
 
-                    $resolutionMode = (string) (getenv('TENANT_RESOLUTION') ?: 'single');
-                    $orgSlug        = (string) (getenv('ORG_SLUG') ?: '');
-                    $baseDomain     = (string) (getenv('BASE_DOMAIN') ?: 'localhost');
+                    $resolutionMode = Env::get('TENANT_RESOLUTION', 'single') ?: 'single';
+                    $orgSlug        = Env::get('ORG_SLUG');
+                    $baseDomain     = Env::get('BASE_DOMAIN', 'localhost') ?: 'localhost';
 
                     $strategy = match ($resolutionMode) {
                         'subdomain' => new SubdomainResolutionStrategy($baseDomain),

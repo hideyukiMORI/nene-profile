@@ -8,10 +8,11 @@ use Nene2\Database\DatabaseQueryExecutorInterface;
 
 final readonly class PdoUserRepository implements UserRepositoryInterface
 {
+    // Portable across MySQL and SQLite: select raw datetime strings and convert
+    // to epoch seconds in PHP (mapRow). Avoid DB-specific UNIX_TIMESTAMP().
     private const SELECT_COLUMNS = '
         id, email, password_hash, role, organization_id, status,
-        UNIX_TIMESTAMP(created_at) AS created_at,
-        UNIX_TIMESTAMP(updated_at) AS updated_at
+        created_at, updated_at
     ';
 
     public function __construct(
@@ -141,8 +142,24 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
             role: (string) $row['role'],
             organizationId: isset($row['organization_id']) ? (int) $row['organization_id'] : null,
             status: (string) ($row['status'] ?? 'active'),
-            createdAt: isset($row['created_at']) ? (int) $row['created_at'] : null,
-            updatedAt: isset($row['updated_at']) ? (int) $row['updated_at'] : null,
+            createdAt: self::toEpoch($row['created_at'] ?? null),
+            updatedAt: self::toEpoch($row['updated_at'] ?? null),
         );
+    }
+
+    private static function toEpoch(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        // Already an epoch integer (e.g. some drivers), or a datetime string.
+        if (is_int($value) || ctype_digit((string) $value)) {
+            return (int) $value;
+        }
+
+        $ts = strtotime((string) $value);
+
+        return $ts !== false ? $ts : null;
     }
 }
