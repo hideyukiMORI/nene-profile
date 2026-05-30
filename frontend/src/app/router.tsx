@@ -4,6 +4,7 @@ import { HomePage } from '@/pages/home/HomePage'
 import { AppShell } from '@/pages/layout/AppShell'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
+import { ImportJobsPage } from '@/pages/import-jobs/ImportJobsPage'
 import { MappingPresetsPage } from '@/pages/mapping-presets/MappingPresetsPage'
 import { OrganizationsPage } from '@/pages/organizations/OrganizationsPage'
 import { UsersPage } from '@/pages/users/UsersPage'
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       { path: 'organizations', element: <OrganizationsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'mapping-presets', element: <MappingPresetsPage /> },
+      { path: 'import-jobs', element: <ImportJobsPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },

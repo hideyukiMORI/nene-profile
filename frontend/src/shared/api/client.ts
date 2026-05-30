@@ -82,6 +82,28 @@ export const apiClient = {
 
     return (await response.json()) as T
   },
+  /**
+   * Authenticated file download. Bearer auth means a plain <a href> cannot carry
+   * the token, so we fetch the bytes and trigger a client-side download.
+   */
+  async download(path: string, filename: string): Promise<void> {
+    const response = await fetch(buildUrl(path), { headers: authHeaders() })
+
+    if (!response.ok) {
+      handleErrorResponse(response, path)
+      throw await parseProblemDetails(response)
+    }
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  },
 }
 
 export { AppError }
