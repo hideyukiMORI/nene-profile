@@ -1,0 +1,11 @@
+---
+description: NeNe Profile project rules
+alwaysApply: true
+---
+
+# Project Rules
+
+- Canonical docs: `README.md`, `AGENTS.md`, `docs/explanation/scope-contract.md`, `docs/explanation/csv-normalization-spec.md`, `docs/explanation/output-schema.md`.
+- **NeNe Profile = CSV normalization only** (ADR 0009). No matching, dunning, or document storage.
+- Output schema v1.0 changes require ADR 0010 amendment.
+- Issue-driven; English repository docs (ADR 0008); no secrets in git.
