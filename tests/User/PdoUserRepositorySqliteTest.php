@@ -8,6 +8,7 @@ use Nene2\Database\DatabaseConnectionFactoryInterface;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use NeneProfile\User\PdoUserRepository;
 use NeneProfile\User\User;
+use NeneProfile\User\UserEmailConflictException;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -36,6 +37,7 @@ final class PdoUserRepositorySqliteTest extends TestCase
                 updated_at TEXT NOT NULL
             )',
         );
+        $pdo->exec('CREATE UNIQUE INDEX uniq_users_email ON users (email)');
 
         $factory = new class ($pdo) implements DatabaseConnectionFactoryInterface {
             public function __construct(private readonly PDO $pdo)
@@ -116,5 +118,17 @@ final class PdoUserRepositorySqliteTest extends TestCase
         $this->assertSame(2, $this->repo->countByOrganizationId(7));
         $this->assertTrue($this->repo->emailExists('a@x.com'));
         $this->assertFalse($this->repo->emailExists('z@x.com'));
+    }
+
+    public function test_duplicate_email_maps_unique_violation_to_conflict(): void
+    {
+        // Race backstop: a unique(email) violation must surface as the domain
+        // conflict (422), not a raw constraint exception (500). The executor
+        // wraps the driver error in DatabaseConstraintException, so the repo must
+        // catch that type rather than PDOException.
+        $this->repo->save(new User(id: 0, email: 'dup@x.com', passwordHash: 'x', role: 'member', organizationId: 7));
+
+        $this->expectException(UserEmailConflictException::class);
+        $this->repo->save(new User(id: 0, email: 'dup@x.com', passwordHash: 'x', role: 'member', organizationId: 7));
     }
 }
