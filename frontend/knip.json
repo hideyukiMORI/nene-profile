@@ -4,7 +4,8 @@
     "src/shared/ui/index.ts",
     "src/shared/i18n/index.ts",
     "src/entities/auth/index.ts",
-    "src/entities/organization/index.ts"
+    "src/entities/organization/index.ts",
+    "src/entities/user/index.ts"
   ],
   "project": ["src/**/*.{ts,tsx}"],
   "ignoreDependencies": ["tailwindcss"]
