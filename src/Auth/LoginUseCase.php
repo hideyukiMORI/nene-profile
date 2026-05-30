@@ -35,8 +35,9 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
         // superadmin has no org context; all other roles embed their org_id in the JWT.
         $orgId = $role === Role::Superadmin ? null : $user->organizationId;
 
+        // sub = user ID (integer) for AuthContext::userId() without a DB lookup.
         $token = $this->tokenIssuer->issue([
-            'sub'    => $user->email,
+            'sub'    => $user->id,
             'role'   => $role->value,
             'org_id' => $orgId,
             'iat'    => time(),
