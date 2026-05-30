@@ -15,4 +15,5 @@
 /storage/
 /build/
 /frontend/node_modules/
-/frontend/apps/*/dist/
+/frontend/dist/
+/frontend/.vitest.cache/
