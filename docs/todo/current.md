@@ -7,10 +7,11 @@
 - [x] Issue #1: Governance bootstrap → PR #1 → merged
 - [x] Issue #2: CSV spec & output schema review → PR #2 → merged
 - [x] Issue #3: Public repository visibility + ADR 0011 bilingual policy → PR #3 → merged
+- [x] Issue #5: コーディング標準・NENE2 継承ドキュメント整備 → PR #6 → merged
 
 ## In Progress
 
-- [ ] Issue #5: コーディング標準・NENE2 継承ドキュメント整備 (this PR)
+- [ ] Issue #7: terminology.md 唯一の正解化・タイポ禁止ルール全面強化 (this PR)
 
 ## Next (Phase 1)
 

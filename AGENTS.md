@@ -15,15 +15,18 @@ See [ADR 0009](docs/adr/0009-separate-from-nene-clear.md).
 ## Read First
 
 - **Scope contract (binding):** `docs/explanation/scope-contract.md`
+- **Compliance rules (binding):** `docs/explanation/accounting-compliance.md`
+- **Terminology registry (binding):** `docs/explanation/terminology.md` ← **識別子を書く前に必ず確認**
+- **Coding standards:** `docs/development/coding-standards.md`
 - **CSV spec (binding):** `docs/explanation/csv-normalization-spec.md`
 - **Output schema:** `docs/explanation/output-schema.md`
-- **Portfolio strategy:** [publication-strategy `docs/products/nene-profile.md`](https://github.com/hideyukiMORI/publication-strategy/blob/main/docs/products/nene-profile.md)
 - **Clear downstream:** `docs/integrations/clear-downstream-contract.md`
 - **Current work:** `docs/todo/current.md`
 
 ## Operating Rules
 
 - Issue-driven; no direct commits to `main`
+- **識別子はすべて `docs/explanation/terminology.md` を確認してから書く** — タイポ・スペルバリエーションはマージブロック
 - Do **not** add invoice matching, payment write-back, or dunning — **`nene-clear`**
 - Do **not** add document/PDF storage — **`nene-vault`**
 - Do **not** duplicate Clear's reconciliation entities in Profile DB

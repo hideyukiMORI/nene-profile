@@ -11,4 +11,4 @@ alwaysApply: true
 - Issue-driven; repository docs and commits in Japanese or English only (ADR 0011); no secrets in git.
 - Coding standards: `docs/development/coding-standards.md`. Naming violations block merge.
 - Compliance changes: run `docs/review/compliance.md` checklist. No silent row drops.
-- Term registry: `docs/explanation/terminology.md`. Identifier typos block merge.
+- **Term registry (唯一の正解): `docs/explanation/terminology.md`** — 識別子を書く前に必ず確認。タイポ・スペルバリエーション・略称はマージブロック。詳細は `.cursor/rules/20-terminology.mdc`。

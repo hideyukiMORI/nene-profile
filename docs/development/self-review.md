@@ -7,14 +7,25 @@
 
 ## 共通チェック（全 PR）
 
+### 用語・識別子（ゼロ許容）
+
+- [ ] この PR で使用した **全識別子**（クラス名・メソッド名・DB カラム・JSON プロパティ・URL・ステータス値など）を `docs/explanation/terminology.md` で確認した
+- [ ] `terminology.md` §14「よくある禁止スペル早見表」の禁止形式を使っていない
+- [ ] 新規識別子を追加した場合、**同 PR** で `terminology.md` の適切なセクションに登録した
+- [ ] 用語の意味・定義を追加した場合、`docs/explanation/glossary.md` も同 PR で更新した
+
+### ワークフロー
+
 - [ ] 関連 GitHub Issue が存在し、ブランチ名が `type/issue-number-summary` 形式
 - [ ] `docs/roadmap.md`・`docs/milestones/`・`docs/todo/current.md` を事前確認済み
 - [ ] `main` への直接コミットなし
 - [ ] コミットメッセージが Conventional Commits 形式 + `(#issue)` 含む
+
+### コード品質
+
 - [ ] `composer check` 全通過（PHPStan + PHP-CS-Fixer + PHPUnit）
 - [ ] コンパイルエラー・未解決の TODO・デバッグログがない
 - [ ] シークレット・トークン・`.env` ファイルが含まれていない
-- [ ] 命名規則 (`naming-conventions.md`) 遵守・用語レジストリ (`terminology.md`) 更新済み（追加・変更がある場合）
 
 ---
 
