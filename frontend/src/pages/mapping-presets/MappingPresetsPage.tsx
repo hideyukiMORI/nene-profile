@@ -1,18 +1,20 @@
 import { useState } from 'react'
-import { useMappingPresets, type MappingPreset } from '@/entities/mapping-preset'
-import { CreatePresetForm, DeletePresetAction } from '@/features/mapping-presets'
+import { useMappingPreset, useMappingPresets, type MappingPreset } from '@/entities/mapping-preset'
+import { CreatePresetForm, DeletePresetAction, EditPresetForm } from '@/features/mapping-presets'
 import { useTranslation } from '@/shared/i18n'
 import { AsyncBoundary, Button, DataTable, Pagination, Stack, Text, type Column } from '@/shared/ui'
 
 const PAGE_SIZE = 20
 
-/** Mapping-presets admin screen: paginated list + create (definition editor) + delete. */
+/** Mapping-presets admin screen: paginated list + create + edit (new version) + delete. */
 export function MappingPresetsPage() {
   const { t } = useTranslation()
   const [offset, setOffset] = useState(0)
   const [creating, setCreating] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
 
   const query = useMappingPresets({ limit: PAGE_SIZE, offset })
+  const editQuery = useMappingPreset(editingId)
   const total = query.data?.total ?? 0
   const rows = query.data?.items ?? []
 
@@ -32,7 +34,21 @@ export function MappingPresetsPage() {
       id: 'actions',
       header: t('admin.mappingPresets.col.actions'),
       align: 'end',
-      render: (p) => <DeletePresetAction preset={p} />,
+      render: (p) => (
+        <span className="inline-flex gap-inline-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setCreating(false)
+              setEditingId(p.id)
+            }}
+          >
+            {t('common.actions.edit')}
+          </Button>
+          <DeletePresetAction preset={p} />
+        </span>
+      ),
     },
   ]
 
@@ -45,7 +61,7 @@ export function MappingPresetsPage() {
         <Text as="h1" variant="display">
           {t('admin.mappingPresets.title')}
         </Text>
-        {!creating ? (
+        {!creating && editingId === null ? (
           <Button
             size="sm"
             onClick={() => {
@@ -56,6 +72,33 @@ export function MappingPresetsPage() {
           </Button>
         ) : null}
       </div>
+
+      {editingId !== null ? (
+        <div className="rounded-md border border-border bg-surface p-inline-lg">
+          <AsyncBoundary
+            isLoading={editQuery.isPending}
+            isError={editQuery.isError}
+            loadingLabel={t('common.state.loading')}
+            errorLabel={t('admin.mappingPresets.error')}
+            retryLabel={t('common.actions.retry')}
+            onRetry={() => {
+              void editQuery.refetch()
+            }}
+          >
+            {editQuery.data !== undefined ? (
+              <EditPresetForm
+                preset={editQuery.data}
+                onSaved={() => {
+                  setEditingId(null)
+                }}
+                onCancel={() => {
+                  setEditingId(null)
+                }}
+              />
+            ) : null}
+          </AsyncBoundary>
+        </div>
+      ) : null}
 
       {creating ? (
         <div className="rounded-md border border-border bg-surface p-inline-lg">
