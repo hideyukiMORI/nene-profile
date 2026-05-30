@@ -9,6 +9,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\DomainExceptionHandlerInterface;
 use Nene2\Http\RequestScopedHolder;
+use NeneProfile\Audit\AuditRouteRegistrar;
+use NeneProfile\Audit\AuditServiceProvider;
 use NeneProfile\Auth\AuthRouteRegistrar;
 use NeneProfile\Auth\AuthServiceProvider;
 use NeneProfile\Auth\InvalidCredentialsExceptionHandler;
@@ -37,6 +39,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
         );
 
         $builder
+            ->addProvider(new AuditServiceProvider())
             ->addProvider(new OrganizationServiceProvider())
             ->addProvider(new AuthServiceProvider());
 
@@ -46,6 +49,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                 static function (ContainerInterface $c): array {
                     $auth         = $c->get(AuthRouteRegistrar::class);
                     $organization = $c->get(OrganizationRouteRegistrar::class);
+                    $audit        = $c->get(AuditRouteRegistrar::class);
 
                     if (!$auth instanceof AuthRouteRegistrar) {
                         throw new LogicException('AuthRouteRegistrar service is invalid.');
@@ -55,7 +59,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('OrganizationRouteRegistrar service is invalid.');
                     }
 
-                    return [$auth, $organization];
+                    if (!$audit instanceof AuditRouteRegistrar) {
+                        throw new LogicException('AuditRouteRegistrar service is invalid.');
+                    }
+
+                    return [$auth, $organization, $audit];
                 },
             )
             ->set(

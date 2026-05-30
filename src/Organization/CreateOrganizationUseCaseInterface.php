@@ -6,5 +6,5 @@ namespace NeneProfile\Organization;
 
 interface CreateOrganizationUseCaseInterface
 {
-    public function execute(CreateOrganizationInput $input): CreateOrganizationOutput;
+    public function execute(?int $actorUserId, CreateOrganizationInput $input): CreateOrganizationOutput;
 }

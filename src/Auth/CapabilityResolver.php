@@ -20,6 +20,11 @@ final class CapabilityResolver
             return Capability::ManageUsers;
         }
 
+        // Audit logs: admin-only read (oversight)
+        if (str_starts_with($path, '/admin/audit-logs')) {
+            return Capability::ManageUsers;
+        }
+
         // Organization settings: admin-only (all methods)
         if (str_starts_with($path, '/admin/organization-settings')) {
             return Capability::ManageOrganizationSettings;
