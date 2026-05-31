@@ -18,6 +18,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { to: '/import-jobs', key: 'admin.nav.importJobs' },
   { to: '/settings', key: 'admin.nav.settings', capability: 'manage_organization_settings' },
   { to: '/audit-logs', key: 'admin.nav.auditLogs' },
+  { to: '/account', key: 'admin.nav.account' },
 ]
 
 /** Authenticated layout: top bar + nav + routed content. */

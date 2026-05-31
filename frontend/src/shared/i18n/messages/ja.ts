@@ -49,6 +49,18 @@ export const jaMessages = {
   'admin.auth.emailRequired': 'メールアドレスを入力してください。',
   'admin.auth.passwordRequired': 'パスワードを入力してください。',
   'admin.account.signedInAs': '{{email}} でログイン中',
+  'admin.account.title': 'アカウント',
+  'admin.account.changePassword.title': 'パスワード変更',
+  'admin.account.changePassword.currentPassword': '現在のパスワード',
+  'admin.account.changePassword.newPassword': '新しいパスワード',
+  'admin.account.changePassword.confirmPassword': '新しいパスワード（確認）',
+  'admin.account.changePassword.submit': 'パスワードを変更する',
+  'admin.account.changePassword.success': 'パスワードを変更しました。',
+  'admin.account.changePassword.errorCurrentPassword': '現在のパスワードが正しくありません。',
+  'admin.account.changePassword.errorGeneric': 'パスワードの変更に失敗しました。',
+  'admin.account.changePassword.currentPasswordRequired': '現在のパスワードを入力してください。',
+  'admin.account.changePassword.newPasswordMin': '新しいパスワードは8文字以上で入力してください。',
+  'admin.account.changePassword.confirmPasswordMismatch': 'パスワードが一致しません。',
 
   // ── Navigation ────────────────────────────────────────────────────────────
   'admin.nav.dashboard': 'ダッシュボード',
@@ -58,6 +70,7 @@ export const jaMessages = {
   'admin.nav.importJobs': 'インポートジョブ',
   'admin.nav.auditLogs': '監査ログ',
   'admin.nav.settings': '組織設定',
+  'admin.nav.account': 'アカウント',
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   'admin.dashboard.title': 'ダッシュボード',

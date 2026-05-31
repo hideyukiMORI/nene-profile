@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { AccountPage } from '@/pages/account/AccountPage'
 import { ForbiddenPage } from '@/pages/forbidden/ForbiddenPage'
 import { HomePage } from '@/pages/home/HomePage'
 import { AppShell } from '@/pages/layout/AppShell'
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
       { path: 'import-jobs', element: <ImportJobsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'audit-logs', element: <AuditLogsPage /> },
+      { path: 'account', element: <AccountPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },

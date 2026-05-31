@@ -44,6 +44,18 @@ export const enMessages: MessageCatalog = {
   'admin.auth.emailRequired': 'Email is required.',
   'admin.auth.passwordRequired': 'Password is required.',
   'admin.account.signedInAs': 'Signed in as {{email}}',
+  'admin.account.title': 'Account',
+  'admin.account.changePassword.title': 'Change password',
+  'admin.account.changePassword.currentPassword': 'Current password',
+  'admin.account.changePassword.newPassword': 'New password',
+  'admin.account.changePassword.confirmPassword': 'Confirm new password',
+  'admin.account.changePassword.submit': 'Change password',
+  'admin.account.changePassword.success': 'Password changed successfully.',
+  'admin.account.changePassword.errorCurrentPassword': 'Current password is incorrect.',
+  'admin.account.changePassword.errorGeneric': 'Failed to change password.',
+  'admin.account.changePassword.currentPasswordRequired': 'Current password is required.',
+  'admin.account.changePassword.newPasswordMin': 'New password must be at least 8 characters.',
+  'admin.account.changePassword.confirmPasswordMismatch': 'Passwords do not match.',
 
   // ── Navigation ────────────────────────────────────────────────────────────
   'admin.nav.dashboard': 'Dashboard',
@@ -53,6 +65,7 @@ export const enMessages: MessageCatalog = {
   'admin.nav.importJobs': 'Import jobs',
   'admin.nav.auditLogs': 'Audit logs',
   'admin.nav.settings': 'Organization settings',
+  'admin.nav.account': 'Account',
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   'admin.dashboard.title': 'Dashboard',

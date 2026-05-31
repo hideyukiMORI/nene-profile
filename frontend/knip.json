@@ -9,7 +9,8 @@
     "src/entities/mapping-preset/index.ts",
     "src/entities/import-job/index.ts",
     "src/entities/organization-settings/index.ts",
-    "src/entities/audit-log/index.ts"
+    "src/entities/audit-log/index.ts",
+    "src/features/account/index.ts"
   ],
   "project": ["src/**/*.{ts,tsx}"],
   "ignoreDependencies": ["tailwindcss"]
