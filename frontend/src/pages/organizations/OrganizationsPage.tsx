@@ -1,16 +1,21 @@
 import { useState } from 'react'
 import { useOrganizations, type Organization } from '@/entities/organization'
-import { CreateOrganizationForm, DeleteOrganizationAction } from '@/features/organizations'
+import {
+  CreateOrganizationForm,
+  DeleteOrganizationAction,
+  EditOrganizationForm,
+} from '@/features/organizations'
 import { useTranslation } from '@/shared/i18n'
 import { AsyncBoundary, Button, DataTable, Pagination, Stack, Text, type Column } from '@/shared/ui'
 
 const PAGE_SIZE = 20
 
-/** Organizations admin screen: paginated list + create + delete (superadmin). */
+/** Organizations admin screen: paginated list + create + edit + delete (superadmin). */
 export function OrganizationsPage() {
   const { t } = useTranslation()
   const [offset, setOffset] = useState(0)
   const [creating, setCreating] = useState(false)
+  const [editingId, setEditingId] = useState<number | null>(null)
 
   const query = useOrganizations({ limit: PAGE_SIZE, offset })
   const total = query.data?.total ?? 0
@@ -36,12 +41,28 @@ export function OrganizationsPage() {
       id: 'actions',
       header: t('admin.organizations.col.actions'),
       align: 'end',
-      render: (o) => <DeleteOrganizationAction organization={o} />,
+      render: (o) => (
+        <div className="flex items-center gap-inline-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setEditingId(o.id)
+            }}
+            data-testid={`org-edit-${String(o.id)}`}
+          >
+            {t('admin.organizations.editButton')}
+          </Button>
+          <DeleteOrganizationAction organization={o} />
+        </div>
+      ),
     },
   ]
 
   const from = total === 0 ? 0 : offset + 1
   const to = Math.min(offset + PAGE_SIZE, total)
+
+  const editingOrg = editingId !== null ? (rows.find((o) => o.id === editingId) ?? null) : null
 
   return (
     <Stack gap="lg">
@@ -49,7 +70,7 @@ export function OrganizationsPage() {
         <Text as="h1" variant="display">
           {t('admin.organizations.title')}
         </Text>
-        {!creating ? (
+        {!creating && editingId === null ? (
           <Button
             size="sm"
             onClick={() => {
@@ -69,6 +90,20 @@ export function OrganizationsPage() {
             }}
             onCancel={() => {
               setCreating(false)
+            }}
+          />
+        </div>
+      ) : null}
+
+      {editingOrg !== null ? (
+        <div className="rounded-md border border-border bg-surface p-inline-lg">
+          <EditOrganizationForm
+            organization={editingOrg}
+            onSaved={() => {
+              setEditingId(null)
+            }}
+            onCancel={() => {
+              setEditingId(null)
             }}
           />
         </div>

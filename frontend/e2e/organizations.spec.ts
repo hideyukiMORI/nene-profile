@@ -140,3 +140,36 @@ test('delete: shows an in-dialog error on failure', async ({ page }) => {
   await expect(page.getByText('削除できませんでした。')).toBeVisible()
   await expect(page.getByRole('dialog')).toBeVisible()
 })
+
+test('edit: opens form, updates name, and row reflects change', async ({ page }) => {
+  await open(page, {
+    items: [org(1, 'Acme', 'acme')],
+  })
+  await routeResource(
+    page,
+    'organizations',
+    { items: [org(1, 'Acme', 'acme')] },
+    {
+      patch: (existing, body) => ({ ...existing, ...body }),
+    },
+  )
+
+  await page.getByTestId('org-edit-1').click()
+  await expect(page.getByTestId('org-name')).toBeVisible()
+  await page.getByTestId('org-name').fill('Acme Updated')
+  await page.getByTestId('org-edit-submit').click()
+
+  await expect(page.getByRole('cell', { name: 'Acme Updated', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '組織を作成' })).toBeVisible()
+})
+
+test('edit: cancel closes form without saving', async ({ page }) => {
+  await open(page, { items: [org(1, 'Acme', 'acme')] })
+
+  await page.getByTestId('org-edit-1').click()
+  await page.getByTestId('org-name').fill('Changed But Cancelled')
+  await page.getByRole('button', { name: 'キャンセル', exact: true }).click()
+
+  await expect(page.getByRole('cell', { name: 'Acme', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '組織を作成' })).toBeVisible()
+})

@@ -175,6 +175,36 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Organizations]
+      summary: Update organization
+      description: Updates name, slug, is_active, or custom_domain. Superadmin only. Recorded in the audit trail.
+      operationId: updateOrganization
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+      responses:
+        '200':
+          description: Updated organization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
     delete:
       tags: [Organizations]
       summary: Delete organization
@@ -652,6 +682,12 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
+    Conflict:
+      description: Resource conflict (e.g. duplicate slug).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
     PayloadTooLarge:
       description: Uploaded file exceeds the size limit.
       content:
@@ -774,6 +810,20 @@ components:
         is_active:
           type: boolean
           default: true
+        custom_domain:
+          type: [string, 'null']
+
+    UpdateOrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        is_active:
+          type: boolean
         custom_domain:
           type: [string, 'null']
 

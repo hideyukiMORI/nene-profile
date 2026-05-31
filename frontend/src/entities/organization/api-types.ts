@@ -21,3 +21,10 @@ export interface CreateOrganizationDto {
   slug: string
   custom_domain?: string | null
 }
+
+export interface UpdateOrganizationDto {
+  name?: string
+  slug?: string
+  is_active?: boolean
+  custom_domain?: string | null
+}
