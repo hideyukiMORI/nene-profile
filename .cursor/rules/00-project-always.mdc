@@ -12,3 +12,21 @@ alwaysApply: true
 - Coding standards: `docs/development/coding-standards.md`. Naming violations block merge.
 - Compliance changes: run `docs/review/compliance.md` checklist. No silent row drops.
 - **Term registry (唯一の正解): `docs/explanation/terminology.md`** — 識別子を書く前に必ず確認。タイポ・スペルバリエーション・略称はマージブロック。詳細は `.cursor/rules/20-terminology.mdc`。
+
+## Local Port Registry
+
+並行開発環境でのポート衝突を防ぐため、各プロジェクトにポートを割り当て固定する。
+ポートを変更する場合は必ず下表とともに `compose.yaml`・`.env.example`・`frontend/vite.config.ts` を更新すること。
+
+| プロジェクト | HTTP | phpMyAdmin / UI | MySQL / DB |
+|---|---|---|---|
+| NENE2 | 8200 | — | 3316 |
+| NeNe Clear | 83** | — | — |
+| NeNe Records | 18082 | 18083 | 13308 |
+| nene-concierge | 8090 | 8091 | 3390 |
+| **NeNe Profile** | **8490** | **8491** | **3409** |
+
+- `compose.yaml` のデフォルト値は上記で固定済み。
+- `.env.example` に `NENE_PROFILE_PORT=8490` 等を明記。
+- Vite dev proxy は `http://localhost:8490` を向く。
+- 新規ポートを追加する場合はこの表を更新してから実装すること。
