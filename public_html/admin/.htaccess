@@ -1,0 +1,3 @@
+# SPA client-side routing is handled by the parent public_html/.htaccess.
+# This file intentionally contains no RewriteRules to avoid interfering
+# with API routes that share the /admin/ prefix.
