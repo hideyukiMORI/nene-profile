@@ -13,6 +13,7 @@ final readonly class OrganizationRouteRegistrar
         private ListOrganizationsHandler $listHandler,
         private GetOrganizationByIdHandler $getHandler,
         private CreateOrganizationHandler $createHandler,
+        private UpdateOrganizationHandler $updateHandler,
         private DeleteOrganizationHandler $deleteHandler,
     ) {
     }
@@ -22,11 +23,13 @@ final readonly class OrganizationRouteRegistrar
         $list   = $this->listHandler;
         $get    = $this->getHandler;
         $create = $this->createHandler;
+        $update = $this->updateHandler;
         $delete = $this->deleteHandler;
 
         $router->get('/admin/organizations', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->get('/admin/organizations/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
         $router->post('/admin/organizations', static fn (ServerRequestInterface $r) => $create->handle($r));
+        $router->patch('/admin/organizations/{id}', static fn (ServerRequestInterface $r) => $update->handle($r));
         $router->delete('/admin/organizations/{id}', static fn (ServerRequestInterface $r) => $delete->handle($r));
     }
 }

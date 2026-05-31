@@ -100,6 +100,16 @@ export const enMessages: MessageCatalog = {
     'This will delete "{{name}}". This action cannot be undone.',
   'admin.organizations.delete.confirm': 'Delete',
   'admin.organizations.delete.error': 'Could not delete.',
+  'admin.organizations.editButton': 'Edit',
+  'admin.organizations.form.name': 'Name',
+  'admin.organizations.form.slug': 'Slug',
+  'admin.organizations.form.isActive': 'Active',
+  'admin.organizations.form.customDomain': 'Custom domain',
+  'admin.organizations.form.nameRequired': 'Name is required.',
+  'admin.organizations.form.slugInvalid':
+    'Slug must contain only lowercase letters, digits, and hyphens.',
+  'admin.organizations.form.slugConflict': 'This slug is already in use.',
+  'admin.organizations.form.saved': 'Saved.',
 
   // ── Users ─────────────────────────────────────────────────────────────────
   'admin.users.title': 'Users',

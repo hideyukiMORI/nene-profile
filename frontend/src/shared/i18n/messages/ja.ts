@@ -103,6 +103,15 @@ export const jaMessages = {
   'admin.organizations.delete.message': '「{{name}}」を削除します。この操作は取り消せません。',
   'admin.organizations.delete.confirm': '削除する',
   'admin.organizations.delete.error': '削除できませんでした。',
+  'admin.organizations.editButton': '編集',
+  'admin.organizations.form.name': '名称',
+  'admin.organizations.form.slug': 'スラグ',
+  'admin.organizations.form.isActive': '有効',
+  'admin.organizations.form.customDomain': 'カスタムドメイン',
+  'admin.organizations.form.nameRequired': '名称を入力してください。',
+  'admin.organizations.form.slugInvalid': 'スラグは英小文字・数字・ハイフンのみ使用できます。',
+  'admin.organizations.form.slugConflict': 'このスラグはすでに使用されています。',
+  'admin.organizations.form.saved': '保存しました。',
 
   // ── Users ─────────────────────────────────────────────────────────────────
   'admin.users.title': 'ユーザー一覧',

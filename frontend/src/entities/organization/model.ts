@@ -1,4 +1,9 @@
-import type { CreateOrganizationDto, OrganizationDto, OrganizationListDto } from './api-types'
+import type {
+  CreateOrganizationDto,
+  OrganizationDto,
+  OrganizationListDto,
+  UpdateOrganizationDto,
+} from './api-types'
 
 /** Domain model (camelCase). UI code only ever sees this shape, never the DTO. */
 export interface Organization {
@@ -22,6 +27,14 @@ export interface OrganizationList {
 export interface CreateOrganizationInput {
   name: string
   slug: string
+  customDomain?: string | null
+}
+
+export interface UpdateOrganizationInput {
+  id: number
+  name?: string
+  slug?: string
+  isActive?: boolean
   customDomain?: string | null
 }
 
@@ -60,4 +73,13 @@ export function toCreateOrganizationDto(input: CreateOrganizationInput): CreateO
       ? { custom_domain: input.customDomain }
       : {}),
   }
+}
+
+export function toUpdateOrganizationDto(input: UpdateOrganizationInput): UpdateOrganizationDto {
+  const dto: UpdateOrganizationDto = {}
+  if (input.name !== undefined) dto.name = input.name
+  if (input.slug !== undefined) dto.slug = input.slug
+  if (input.isActive !== undefined) dto.is_active = input.isActive
+  if (input.customDomain !== undefined) dto.custom_domain = input.customDomain
+  return dto
 }

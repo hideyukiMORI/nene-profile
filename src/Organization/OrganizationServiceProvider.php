@@ -141,6 +141,40 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                 },
             )
             ->set(
+                UpdateOrganizationUseCaseInterface::class,
+                static function (ContainerInterface $c): UpdateOrganizationUseCaseInterface {
+                    $orgs  = $c->get(OrganizationRepositoryInterface::class);
+                    $audit = $c->get(AuditRecorderInterface::class);
+
+                    if (!$orgs instanceof OrganizationRepositoryInterface) {
+                        throw new LogicException('OrganizationRepository service is invalid.');
+                    }
+
+                    if (!$audit instanceof AuditRecorderInterface) {
+                        throw new LogicException('AuditRecorder service is invalid.');
+                    }
+
+                    return new UpdateOrganizationUseCase($orgs, $audit);
+                },
+            )
+            ->set(
+                UpdateOrganizationHandler::class,
+                static function (ContainerInterface $c): UpdateOrganizationHandler {
+                    $uc   = $c->get(UpdateOrganizationUseCaseInterface::class);
+                    $json = $c->get(JsonResponseFactory::class);
+
+                    if (!$uc instanceof UpdateOrganizationUseCaseInterface) {
+                        throw new LogicException('UpdateOrganization use case service is invalid.');
+                    }
+
+                    if (!$json instanceof JsonResponseFactory) {
+                        throw new LogicException('JSON response factory service is invalid.');
+                    }
+
+                    return new UpdateOrganizationHandler($uc, $json);
+                },
+            )
+            ->set(
                 DeleteOrganizationHandler::class,
                 static function (ContainerInterface $c): DeleteOrganizationHandler {
                     $uc              = $c->get(DeleteOrganizationUseCaseInterface::class);
@@ -187,6 +221,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                     $list   = $c->get(ListOrganizationsHandler::class);
                     $get    = $c->get(GetOrganizationByIdHandler::class);
                     $create = $c->get(CreateOrganizationHandler::class);
+                    $update = $c->get(UpdateOrganizationHandler::class);
                     $delete = $c->get(DeleteOrganizationHandler::class);
 
                     if (!$list instanceof ListOrganizationsHandler) {
@@ -201,11 +236,15 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                         throw new LogicException('CreateOrganization handler service is invalid.');
                     }
 
+                    if (!$update instanceof UpdateOrganizationHandler) {
+                        throw new LogicException('UpdateOrganization handler service is invalid.');
+                    }
+
                     if (!$delete instanceof DeleteOrganizationHandler) {
                         throw new LogicException('DeleteOrganization handler service is invalid.');
                     }
 
-                    return new OrganizationRouteRegistrar($list, $get, $create, $delete);
+                    return new OrganizationRouteRegistrar($list, $get, $create, $update, $delete);
                 },
             );
     }
