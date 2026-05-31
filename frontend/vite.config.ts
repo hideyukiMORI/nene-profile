@@ -13,8 +13,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/admin': 'http://localhost:8090',
-      '/health': 'http://localhost:8090',
+      '/admin': 'http://localhost:8490',
+      '/health': 'http://localhost:8490',
     },
   },
   build: {

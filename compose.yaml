@@ -26,7 +26,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-nene_profile}
       DB_CHARSET: ${DB_CHARSET:-utf8mb4}
     ports:
-      - "${NENE_PROFILE_PORT:-8090}:80"
+      - "${NENE_PROFILE_PORT:-8490}:80"
     volumes:
       - .:/var/www/html
       - ../NENE2:/var/www/NENE2:ro
@@ -41,7 +41,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:-nene_profile}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-nene_profile_root}
     ports:
-      - "${NENE_PROFILE_MYSQL_PORT:-3308}:3306"
+      - "${NENE_PROFILE_MYSQL_PORT:-3409}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -63,7 +63,7 @@ services:
       PMA_HOST: mysql
       PMA_PORT: 3306
     ports:
-      - "${NENE_PROFILE_PHPMYADMIN_PORT:-8091}:80"
+      - "${NENE_PROFILE_PHPMYADMIN_PORT:-8491}:80"
 
 volumes:
   mysql-data:
