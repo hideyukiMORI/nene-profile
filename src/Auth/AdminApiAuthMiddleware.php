@@ -13,19 +13,23 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * Authenticates all /admin/ routes except /health and /admin/auth/.
+ * Authenticates all /admin/ routes except /health and /admin/auth/login.
  *
  * Protection rules (first match wins):
- *  1. Always open: /health, /admin/auth/
+ *  1. Always open: /health, /admin/auth/login
  *  2. Protected: all /admin/ paths (all HTTP methods)
  *  3. Everything else: open
+ *
+ * Only the login endpoint is intentionally unauthenticated. All other
+ * /admin/auth/* routes (e.g. PATCH /admin/auth/me/password) require a valid
+ * Bearer JWT — never bypass the whole /admin/auth/ prefix.
  */
 final readonly class AdminApiAuthMiddleware implements MiddlewareInterface
 {
     /** @var list<string> */
     private const ALWAYS_OPEN_PREFIXES = [
         '/health',
-        '/admin/auth/',
+        '/admin/auth/login',
     ];
 
     public function __construct(

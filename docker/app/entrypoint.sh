@@ -38,4 +38,11 @@ if [ "${NENE_PROFILE_SKIP_MIGRATE:-0}" != "1" ]; then
   composer migrations:seed
 fi
 
+# Ensure the original-file storage directory exists and is writable by www-data.
+# NENE_PROFILE_STORAGE_PATH must be an absolute path (relative paths resolve
+# against Apache's CWD, not the project root, causing permission errors).
+STORAGE_PATH="${NENE_PROFILE_STORAGE_PATH:-/var/www/html/storage/uploads}"
+mkdir -p "${STORAGE_PATH}"
+chown -R www-data:www-data "${STORAGE_PATH}"
+
 exec apache2-foreground
