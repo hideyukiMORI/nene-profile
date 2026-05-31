@@ -86,6 +86,26 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationFailed'
 
+  /admin/auth/me/password:
+    patch:
+      tags: [Auth]
+      summary: Change own password
+      description: Allows any authenticated user to change their own password by supplying their current password.
+      operationId: changeOwnPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed successfully.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+
   /admin/organizations:
     get:
       tags: [Organizations]
@@ -671,6 +691,18 @@ components:
         password:
           type: string
           format: password
+
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
 
     LoginResponse:
       type: object

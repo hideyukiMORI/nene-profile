@@ -13,3 +13,9 @@ export interface LoginResponseDto {
   role: UserRole
   org_id: number | null
 }
+
+/** Wire shape for PATCH /admin/auth/me/password. */
+export interface ChangePasswordRequestDto {
+  current_password: string
+  new_password: string
+}

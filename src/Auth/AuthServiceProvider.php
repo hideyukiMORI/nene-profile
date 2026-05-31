@@ -12,6 +12,7 @@ use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use NeneProfile\User\UserRepositoryInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 
 final readonly class AuthServiceProvider implements ServiceProviderInterface
 {
@@ -65,15 +66,66 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                ChangeOwnPasswordUseCaseInterface::class,
+                static function (ContainerInterface $c): ChangeOwnPasswordUseCaseInterface {
+                    $users = $c->get(UserRepositoryInterface::class);
+
+                    if (!$users instanceof UserRepositoryInterface) {
+                        throw new LogicException('UserRepositoryInterface service is invalid.');
+                    }
+
+                    return new ChangeOwnPasswordUseCase($users);
+                },
+            )
+            ->set(
+                ChangeOwnPasswordHandler::class,
+                static function (ContainerInterface $c): ChangeOwnPasswordHandler {
+                    $uc      = $c->get(ChangeOwnPasswordUseCaseInterface::class);
+                    $rf      = $c->get(ResponseFactoryInterface::class);
+                    $pd      = $c->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$uc instanceof ChangeOwnPasswordUseCaseInterface) {
+                        throw new LogicException('ChangeOwnPasswordUseCaseInterface service is invalid.');
+                    }
+
+                    if (!$rf instanceof ResponseFactoryInterface) {
+                        throw new LogicException('ResponseFactoryInterface service is invalid.');
+                    }
+
+                    if (!$pd instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('ProblemDetailsResponseFactory service is invalid.');
+                    }
+
+                    return new ChangeOwnPasswordHandler($uc, $rf, $pd);
+                },
+            )
+            ->set(
+                InvalidCurrentPasswordExceptionHandler::class,
+                static function (ContainerInterface $c): InvalidCurrentPasswordExceptionHandler {
+                    $pd = $c->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$pd instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('ProblemDetailsResponseFactory service is invalid.');
+                    }
+
+                    return new InvalidCurrentPasswordExceptionHandler($pd);
+                },
+            )
+            ->set(
                 AuthRouteRegistrar::class,
                 static function (ContainerInterface $c): AuthRouteRegistrar {
-                    $loginHandler = $c->get(LoginHandler::class);
+                    $loginHandler          = $c->get(LoginHandler::class);
+                    $changePasswordHandler = $c->get(ChangeOwnPasswordHandler::class);
 
                     if (!$loginHandler instanceof LoginHandler) {
                         throw new LogicException('LoginHandler service is invalid.');
                     }
 
-                    return new AuthRouteRegistrar($loginHandler);
+                    if (!$changePasswordHandler instanceof ChangeOwnPasswordHandler) {
+                        throw new LogicException('ChangeOwnPasswordHandler service is invalid.');
+                    }
+
+                    return new AuthRouteRegistrar($loginHandler, $changePasswordHandler);
                 },
             );
     }

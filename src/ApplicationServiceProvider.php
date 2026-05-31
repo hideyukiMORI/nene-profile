@@ -14,6 +14,7 @@ use NeneProfile\Audit\AuditServiceProvider;
 use NeneProfile\Auth\AuthRouteRegistrar;
 use NeneProfile\Auth\AuthServiceProvider;
 use NeneProfile\Auth\InvalidCredentialsExceptionHandler;
+use NeneProfile\Auth\InvalidCurrentPasswordExceptionHandler;
 use NeneProfile\ImportJob\ImportJobNotFoundExceptionHandler;
 use NeneProfile\ImportJob\ImportJobRouteRegistrar;
 use NeneProfile\ImportJob\ImportJobServiceProvider;
@@ -110,6 +111,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                 self::EXCEPTION_HANDLERS,
                 static function (ContainerInterface $c): array {
                     $invalidCredentials        = $c->get(InvalidCredentialsExceptionHandler::class);
+                    $invalidCurrentPassword    = $c->get(InvalidCurrentPasswordExceptionHandler::class);
                     $organizationNotFound      = $c->get(OrganizationNotFoundExceptionHandler::class);
                     $organizationSlugConflict  = $c->get(OrganizationSlugConflictExceptionHandler::class);
                     $userNotFound              = $c->get(UserNotFoundExceptionHandler::class);
@@ -123,6 +125,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
 
                     $handlers = [
                         $invalidCredentials,
+                        $invalidCurrentPassword,
                         $organizationNotFound,
                         $organizationSlugConflict,
                         $userNotFound,

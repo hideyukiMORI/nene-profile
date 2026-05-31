@@ -1,6 +1,6 @@
 import { useMutation, type UseMutationResult } from '@tanstack/react-query'
 import { apiClient, AppError } from '@/shared/api/client'
-import type { LoginRequestDto, LoginResponseDto } from './api-types'
+import type { ChangePasswordRequestDto, LoginRequestDto, LoginResponseDto } from './api-types'
 import { authStore, type AuthSession } from './model'
 
 function toSession(dto: LoginResponseDto): AuthSession {
@@ -24,6 +24,20 @@ export function useLogin(): UseMutationResult<AuthSession, AppError, LoginReques
       const session = toSession(dto)
       authStore.setSession(session)
       return session
+    },
+  })
+}
+
+/** Changes the authenticated user's own password. Returns undefined on success (204). */
+export function useChangeOwnPassword(): UseMutationResult<
+  undefined,
+  AppError,
+  ChangePasswordRequestDto
+> {
+  return useMutation<undefined, AppError, ChangePasswordRequestDto>({
+    mutationFn: async (input) => {
+      await apiClient.patch('/admin/auth/me/password', input)
+      return undefined
     },
   })
 }
