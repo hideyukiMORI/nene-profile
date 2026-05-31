@@ -22,6 +22,7 @@ final class TransformerRegistry
             'date_ymd_slash'               => new DateYmdSlashTransformer(),
             'date_ymd_dash'                => new DateYmdDashTransformer(),
             'date_ymd_compact'             => new DateYmdCompactTransformer(),
+            'date_era'                     => new DateEraTransformer(),
             'amount_yen_to_cents'          => new AmountYenToCentsTransformer(),
             'debit_credit_to_signed_cents' => new DebitCreditToSignedCentsTransformer(),
             'single_column_signed_cents'   => new SingleColumnSignedCentsTransformer(),

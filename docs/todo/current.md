@@ -42,11 +42,13 @@
 - [x] #57 entity mapper / authStore / capabilities / api errors / 共通UI UT → PR #58
 - [x] #59 Playwright E2E（全機能×全境界、API モック）→ PR #60
 
+## Completed — コンプライアンス強化
+
+- [x] #62 requirements / todo / milestones チェックボックス更新 → PR #64
+- [x] #61 ADR 0003 §3 元号変換トランスフォーマー（`date_era`）実装
+
 ## Next
 
-- [ ] #61 ADR 0003 §3 元号変換トランスフォーマー（`date_era`）実装
-- [ ] #62 requirements / todo / milestones チェックボックス更新（このファイル）
-- [ ] #63 i18n locale localStorage 永続化
 - [ ] Docker E2E スモーク（backend + frontend 結合: GET /health → login → preset → import → export）
 - [ ] Clear downstream contract を `nene-clear` チームと調整
 

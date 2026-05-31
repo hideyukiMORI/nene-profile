@@ -55,7 +55,7 @@ All tenant-scoped entities carry **`organization_id`** (ADR 0006).
 > Any departure requires an ADR.
 
 - [x] Amount sign: deposit/inflow → positive `amount_cents`; withdrawal/outflow → negative. No float intermediate. (ADR 0003 §1)
-- [ ] Date output: ISO 8601 YYYY-MM-DD. Two-digit years resolved by preset pivot. **Japanese era dates converted by static table** (ADR 0003 §3 — pending #61). Unresolvable dates → row error. (ADR 0003 §2–3)
+- [x] Date output: ISO 8601 YYYY-MM-DD. Two-digit years resolved by preset pivot. Japanese era dates converted by static table (`date_era` transformer, ADR 0003 §3). Unresolvable dates → row error. (ADR 0003 §2–3)
 - [x] Encoding: UTF-8 and Shift_JIS detected before parse. Mojibake in required fields → row error; no silent byte replacement. (ADR 0003 §4)
 - [x] Row errors: logged in `import_job_errors` with row number, raw snippet, message. Job status `completed_with_errors` when any errors exist. No silent drops.
 - [x] Five provenance fields on every output row: `raw_row_number`, `import_job_id`, `preset_version_id`, `line_hash`, `schema_version`
@@ -94,7 +94,7 @@ A preset (`mapping_preset_version.definition_json`) defines:
 - Identity fields for `line_hash`
 
 Transformers (Phase 1): `trim`, `date_ymd_slash`, `date_ymd_dash`,
-`date_ymd_compact`, `date_era` (pending #61), `amount_yen_to_cents`, `debit_credit_to_signed_cents`,
+`date_ymd_compact`, `date_era`, `amount_yen_to_cents`, `debit_credit_to_signed_cents`,
 `single_column_signed_cents`, `regex_extract`.
 
 Custom transformers require ADR + plugin interface (Phase 3+).

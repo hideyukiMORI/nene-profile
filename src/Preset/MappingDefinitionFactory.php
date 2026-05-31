@@ -21,6 +21,7 @@ final class MappingDefinitionFactory
         'date_ymd_slash',
         'date_ymd_dash',
         'date_ymd_compact',
+        'date_era',
         'amount_yen_to_cents',
         'debit_credit_to_signed_cents',
         'single_column_signed_cents',
