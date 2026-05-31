@@ -3,7 +3,7 @@
 Goal: establish NeNe Profile engineering discipline and **binding CSV/output contracts**
 before runtime code.
 
-**Status: in progress**
+**Status: complete**
 
 ## Acceptance Criteria
 
@@ -13,7 +13,7 @@ before runtime code.
 - [x] Standard output schema v1.0 — binding
 - [x] Clear downstream contract
 - [x] ADR 0001, 0002, 0006–0010, 0009 Clear boundary
-- [ ] Issue #1 governance PR merged
-- [ ] `composer check` green (Issue #4+)
+- [x] Issue #1 governance PR merged → PR #2
+- [x] `composer check` green → PR #6+
 
-Last updated: 2026-05-29
+Last updated: 2026-05-31

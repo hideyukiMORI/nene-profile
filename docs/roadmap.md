@@ -6,13 +6,15 @@ NeNe Profile — bank CSV normalization on NENE2.
 
 Docs, ADR 0001/0002/0007/0009/0010, scope contract, CSV spec, output schema.
 
-## Phase 1: Normalization API
+## Phase 1: Normalization API ✅
 
-Preset CRUD, import job, transformers, export.
+Preset CRUD, import job, transformers, export. (completed 2026-05-30)
 
-## Phase 2: Mapping UI
+## Phase 2: Admin SPA (mostly complete)
 
-Visual column mapper, preset test on sample file.
+Admin SPA with organizations/users/presets/import-jobs/settings/audit-logs/dashboard. (completed 2026-05-30)
+
+Pending: visual column mapper (column-drop from sample CSV, preset test on sample file).
 
 ## Phase 3: Preset library + Clear handoff
 
@@ -22,4 +24,4 @@ Official bank presets, Clear HTTP integration per downstream contract.
 
 - Reconciliation, dunning, Vault, Invoice features.
 
-Last updated: 2026-05-29
+Last updated: 2026-05-31

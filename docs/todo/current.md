@@ -1,6 +1,6 @@
 # Current TODO
 
-**Phase 0 — Governance** ✅ complete · **Phase 1 — Normalization API** 実装中
+**Phase 0 — Governance** ✅ complete · **Phase 1 — Normalization API** ✅ complete · **Phase 2 — Admin SPA** ✅ mostly complete (visual column mapper pending)
 
 ## Completed — Phase 0
 
@@ -20,19 +20,38 @@
 - [x] #21 MappingPreset CRUD + 不変バージョニング → PR #22
 - [x] #23 トランスフォーマーエンジン（ADR 0003 コア）→ PR #24
 - [x] #25 ImportJob ライフサイクル・正規化・エクスポート → PR #26
+- [x] #29 CI（GitHub Actions — backend + frontend 品質ゲート）→ PR #30
 
-**Phase 1 API は機能的に完成**（全 OpenAPI エンドポイント実装済み）。
+## Completed — Phase 2
+
+- [x] #33 フロントエンド基盤 + login 縦スライス → PR #34
+- [x] #35 organizations CRUD + DataTable/Pagination/ConfirmDialog 基盤 → PR #36
+- [x] #37 users CRUD + Select primitive + 編集フォーム → PR #38
+- [x] #39 mapping-presets 一覧/作成/削除 + 定義エディタ → PR #40
+- [x] #41 import-jobs 一覧/CSVアップロード/エラー行/エクスポート → PR #42
+- [x] #43 organization-settings + audit-logs 画面 → PR #44
+- [x] #45 ダッシュボード（最近のジョブ + エラー率）→ PR #46
+- [x] #47 mapping-preset 更新（PATCH=新バージョン）+ フォーム共有化 → PR #48
+
+## Completed — テスト強化
+
+- [x] #49 read 系 UseCase ユニットテスト → PR #50
+- [x] #51 ExceptionHandler RFC 9457 + Handler 成功パス → PR #52
+- [x] #53 Pdo リポジトリ SQLite 統合テスト → PR #54
+- [x] #55 PdoUserRepository email 一意制約 Conflict マッピング → PR #56
+- [x] #57 entity mapper / authStore / capabilities / api errors / 共通UI UT → PR #58
+- [x] #59 Playwright E2E（全機能×全境界、API モック）→ PR #60
 
 ## Next
 
-- [ ] CI（GitHub Actions で composer check + frontend check）
-- [ ] Docker での E2E スモーク（GET /health → login → preset → import → export）
-- [ ] frontend: i18n に続く API クライアント・画面実装
-- [ ] ADR 0003 §3 元号変換トランスフォーマー（terminology §7 追加 + 実装）
+- [ ] #61 ADR 0003 §3 元号変換トランスフォーマー（`date_era`）実装
+- [ ] #62 requirements / todo / milestones チェックボックス更新（このファイル）
+- [ ] #63 i18n locale localStorage 永続化
+- [ ] Docker E2E スモーク（backend + frontend 結合: GET /health → login → preset → import → export）
 - [ ] Clear downstream contract を `nene-clear` チームと調整
 
 ## Handoff
 
 Clear should reference Profile export (StandardTransaction v1.0) in Phase 2.
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31

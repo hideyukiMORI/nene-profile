@@ -54,17 +54,17 @@ All tenant-scoped entities carry **`organization_id`** (ADR 0006).
 > A finance professional reviewing the system must find zero deviations.
 > Any departure requires an ADR.
 
-- [ ] Amount sign: deposit/inflow → positive `amount_cents`; withdrawal/outflow → negative. No float intermediate. (ADR 0003 §1)
-- [ ] Date output: ISO 8601 YYYY-MM-DD. Two-digit years resolved by preset pivot. Japanese era dates converted by static table. Unresolvable dates → row error. (ADR 0003 §2–3)
-- [ ] Encoding: UTF-8 and Shift_JIS detected before parse. Mojibake in required fields → row error; no silent byte replacement. (ADR 0003 §4)
-- [ ] Row errors: logged in `import_job_errors` with row number, raw snippet, message. Job status `completed_with_errors` when any errors exist. No silent drops.
-- [ ] Five provenance fields on every output row: `raw_row_number`, `import_job_id`, `preset_version_id`, `line_hash`, `schema_version`
-- [ ] Original CSV: stored immutably before processing; SHA-256 hash in `import_job.original_file_hash`; never deleted by system processes (ADR 0004)
-- [ ] Import job audit fields: actor, timestamps, preset version, row count, error count; completed records immutable
-- [ ] Preset version freeze: versions referenced by completed jobs cannot be mutated
-- [ ] Within-job duplicate detection: same `line_hash` twice → both rows in `import_job_errors`
-- [ ] CSV export: formula injection strip on all cell values (leading `=`, `+`, `-`, `@`)
-- [ ] All amounts: integer `_cents`; no float in DB, JSON, or test fixtures
+- [x] Amount sign: deposit/inflow → positive `amount_cents`; withdrawal/outflow → negative. No float intermediate. (ADR 0003 §1)
+- [ ] Date output: ISO 8601 YYYY-MM-DD. Two-digit years resolved by preset pivot. **Japanese era dates converted by static table** (ADR 0003 §3 — pending #61). Unresolvable dates → row error. (ADR 0003 §2–3)
+- [x] Encoding: UTF-8 and Shift_JIS detected before parse. Mojibake in required fields → row error; no silent byte replacement. (ADR 0003 §4)
+- [x] Row errors: logged in `import_job_errors` with row number, raw snippet, message. Job status `completed_with_errors` when any errors exist. No silent drops.
+- [x] Five provenance fields on every output row: `raw_row_number`, `import_job_id`, `preset_version_id`, `line_hash`, `schema_version`
+- [x] Original CSV: stored immutably before processing; SHA-256 hash in `import_job.original_file_hash`; never deleted by system processes (ADR 0004)
+- [x] Import job audit fields: actor, timestamps, preset version, row count, error count; completed records immutable
+- [x] Preset version freeze: versions referenced by completed jobs cannot be mutated
+- [x] Within-job duplicate detection: same `line_hash` twice → both rows in `import_job_errors`
+- [x] CSV export: formula injection strip on all cell values (leading `=`, `+`, `-`, `@`)
+- [x] All amounts: integer `_cents`; no float in DB, JSON, or test fixtures
 
 ---
 
@@ -94,7 +94,7 @@ A preset (`mapping_preset_version.definition_json`) defines:
 - Identity fields for `line_hash`
 
 Transformers (Phase 1): `trim`, `date_ymd_slash`, `date_ymd_dash`,
-`date_ymd_compact`, `amount_yen_to_cents`, `debit_credit_to_signed_cents`,
+`date_ymd_compact`, `date_era` (pending #61), `amount_yen_to_cents`, `debit_credit_to_signed_cents`,
 `single_column_signed_cents`, `regex_extract`.
 
 Custom transformers require ADR + plugin interface (Phase 3+).
@@ -118,25 +118,25 @@ Breaking changes require a major version bump and ADR + Clear adapter update.
 
 ## 7. Phase features
 
-### Phase 1 — API only
+### Phase 1 — API only ✅
 
-- [ ] Organization resolution middleware (default `single`; path/subdomain/custom_domain) + `organization_id` scoping on every query (ADR 0006)
-- [ ] Admin JWT auth + `Role`/`Capability` RBAC
-- [ ] Organization CRUD — superadmin (`/admin/organizations`)
-- [ ] User CRUD — admin within organization (`/admin/users`)
-- [ ] Organization settings CRUD
-- [ ] Mapping preset CRUD + versioning
-- [ ] Import job: upload CSV + select/inline preset → run → export
-- [ ] Row-level error logging per compliance rules (§3)
-- [ ] Export: `GET /admin/profile/import-jobs/{id}/export.json` and `.csv`
-- [ ] `GET /health` unauthenticated
-- [ ] OpenAPI 3.1 + PHPUnit + PHPStan 8
+- [x] Organization resolution middleware (default `single`; path/subdomain/custom_domain) + `organization_id` scoping on every query (ADR 0006)
+- [x] Admin JWT auth + `Role`/`Capability` RBAC
+- [x] Organization CRUD — superadmin (`/admin/organizations`)
+- [x] User CRUD — admin within organization (`/admin/users`)
+- [x] Organization settings CRUD
+- [x] Mapping preset CRUD + versioning
+- [x] Import job: upload CSV + select/inline preset → run → export
+- [x] Row-level error logging per compliance rules (§3)
+- [x] Export: `GET /admin/profile/import-jobs/{id}/export.json` and `.csv`
+- [x] `GET /health` unauthenticated
+- [x] OpenAPI 3.1 + PHPUnit + PHPStan 8
 
 ### Phase 2 — Admin UI
 
-- [ ] Admin SPA: preset editor (column-drop from sample file), job status, error table, export download
-- [ ] Admin UI locale catalogs: **ja (primary) + en (secondary)** (ADR 0011)
-- [ ] Dashboard: recent jobs, error rate
+- [x] Admin SPA: preset editor (manual column mapping), job status, error table, export download — visual column-drop from sample file is pending
+- [x] Admin UI locale catalogs: **ja (primary) + en (secondary)** (ADR 0011)
+- [x] Dashboard: recent jobs, error rate
 
 ### Phase 3 — Ecosystem
 
@@ -208,4 +208,4 @@ Breaking changes require a major version bump and ADR + Clear adapter update.
 - **Output schema:** [`output-schema.md`](./output-schema.md)
 - **Roadmap:** [`../roadmap.md`](../roadmap.md)
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31
