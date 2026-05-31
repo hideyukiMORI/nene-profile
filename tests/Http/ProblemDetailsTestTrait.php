@@ -49,6 +49,36 @@ trait ProblemDetailsTestTrait
     }
 
     /**
+     * Request with JSON body — for POST/PATCH handler tests.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function jsonRequest(string $method, string $path, array $data): ServerRequestInterface
+    {
+        $body = $this->psr17()->createStream((string) json_encode($data, JSON_THROW_ON_ERROR));
+
+        return $this->psr17()
+            ->createServerRequest($method, 'https://example.test' . $path)
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody($body);
+    }
+
+    private function withAuth(
+        ServerRequestInterface $request,
+        int $orgId = 1,
+        int $userId = 1,
+        string $role = 'admin',
+    ): ServerRequestInterface {
+        return $request
+            ->withAttribute('nene2.org.id', $orgId)
+            ->withAttribute('nene2.auth.claims', [
+                'sub'    => $userId,
+                'role'   => $role,
+                'org_id' => $role === 'superadmin' ? null : $orgId,
+            ]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function decodeJson(ResponseInterface $response): array

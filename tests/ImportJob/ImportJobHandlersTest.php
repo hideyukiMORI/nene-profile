@@ -1,0 +1,448 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NeneProfile\Tests\ImportJob;
+
+use Nene2\Routing\Router;
+use Nene2\Validation\ValidationException;
+use NeneProfile\Audit\AuditRecorder;
+use NeneProfile\ImportJob\CreateImportJobHandler;
+use NeneProfile\ImportJob\CreateImportJobUseCase;
+use NeneProfile\ImportJob\CsvParser;
+use NeneProfile\ImportJob\ExportImportJobCsvHandler;
+use NeneProfile\ImportJob\ExportImportJobJsonHandler;
+use NeneProfile\ImportJob\ExportImportJobUseCase;
+use NeneProfile\ImportJob\GetImportJobHandler;
+use NeneProfile\ImportJob\GetImportJobUseCase;
+use NeneProfile\ImportJob\ImportJob;
+use NeneProfile\ImportJob\ImportJobError;
+use NeneProfile\ImportJob\ListImportJobErrorsHandler;
+use NeneProfile\ImportJob\ListImportJobErrorsUseCase;
+use NeneProfile\ImportJob\ListImportJobsHandler;
+use NeneProfile\ImportJob\ListImportJobsUseCase;
+use NeneProfile\ImportJob\NormalizationRunner;
+use NeneProfile\ImportJob\NormalizedTransaction;
+use NeneProfile\Preset\CreateMappingPresetUseCase;
+use NeneProfile\Preset\MappingDefinitionFactory;
+use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
+use NeneProfile\Tests\Preset\InMemoryMappingPresetRepository;
+use NeneProfile\Tests\Preset\InMemoryMappingPresetVersionRepository;
+use NeneProfile\Transformer\TransformerRegistry;
+use Nyholm\Psr7\UploadedFile;
+use PHPUnit\Framework\TestCase;
+
+final class ImportJobHandlersTest extends TestCase
+{
+    use ProblemDetailsTestTrait;
+
+    private InMemoryImportJobRepository $jobs;
+    private InMemoryFileStorage $storage;
+    private InMemoryMappingPresetRepository $presets;
+    private InMemoryMappingPresetVersionRepository $versions;
+    private AuditRecorder $audit;
+    private int $presetVersionId;
+
+    protected function setUp(): void
+    {
+        $this->jobs     = new InMemoryImportJobRepository();
+        $this->storage  = new InMemoryFileStorage();
+        $this->presets  = new InMemoryMappingPresetRepository();
+        $this->versions = new InMemoryMappingPresetVersionRepository();
+        $this->audit    = new AuditRecorder(new InMemoryAuditLogRepository());
+
+        // Seed a preset+version to use in tests
+        $uc  = new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
+        $def = MappingDefinitionFactory::fromArray([
+            'encoding'         => 'auto',
+            'delimiter'        => 'auto',
+            'header_row_index' => 0,
+            'year_pivot'       => 50,
+            'columns'          => [
+                'transaction_date' => ['source' => '日付', 'transform' => 'date_ymd_slash'],
+                'amount_cents'     => ['source' => ['入金額', '出金額'], 'transform' => 'debit_credit_to_signed_cents'],
+                'description'      => ['source' => '摘要', 'transform' => 'trim'],
+            ],
+        ]);
+        $result = $uc->execute(1, new \NeneProfile\Preset\CreateMappingPresetInput(
+            organizationId: 1,
+            name: 'MUFG Preset',
+            bankLabel: 'MUFG',
+            definition: $def,
+        ));
+        $this->presetVersionId = $result['version']->id;
+    }
+
+    private function savedJob(int $orgId = 1, string $status = ImportJob::STATUS_COMPLETED): int
+    {
+        $jobId = $this->jobs->save(new ImportJob(
+            id: 0,
+            organizationId: $orgId,
+            actorUserId: 1,
+            presetVersionId: $this->presetVersionId,
+            originalFilename: 'test.csv',
+            originalFileHash: 'sha256:abc',
+            status: $status,
+            rowCount: 3,
+            errorCount: 0,
+            startedAt: date('Y-m-d H:i:s'),
+        ));
+        $this->jobs->complete($jobId, $status, 3, 0);
+
+        return $jobId;
+    }
+
+    // ── GetImportJobHandler ───────────────────────────────────────────────
+
+    public function test_get_returns_job_json(): void
+    {
+        $id = $this->savedJob();
+
+        $handler = new GetImportJobHandler(
+            new GetImportJobUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}"))
+            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => (string) $id]);
+
+        $response = $handler->handle($request);
+        $payload  = $this->decodeJson($response);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame($id, $payload['id']);
+        $this->assertSame('test.csv', $payload['original_filename']);
+        $this->assertSame(ImportJob::STATUS_COMPLETED, $payload['status']);
+        $this->assertArrayHasKey('row_count', $payload);
+        $this->assertArrayHasKey('error_count', $payload);
+    }
+
+    public function test_get_returns_400_without_org(): void
+    {
+        $handler = new GetImportJobHandler(
+            new GetImportJobUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $response = $handler->handle(
+            $this->request('GET', '/admin/import-jobs/1')
+                ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
+        );
+
+        $this->assertSame(400, $response->getStatusCode());
+    }
+
+    public function test_get_propagates_not_found(): void
+    {
+        $this->expectException(\NeneProfile\ImportJob\ImportJobNotFoundException::class);
+
+        $handler = new GetImportJobHandler(
+            new GetImportJobUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('GET', '/admin/import-jobs/999'))
+            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '999']);
+
+        $handler->handle($request);
+    }
+
+    // ── ListImportJobsHandler ─────────────────────────────────────────────
+
+    public function test_list_returns_paginated_envelope(): void
+    {
+        $this->savedJob();
+        $this->savedJob();
+
+        $handler = new ListImportJobsHandler(
+            new ListImportJobsUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $response = $handler->handle($this->withAuth($this->request('GET', '/admin/import-jobs')));
+        $payload  = $this->decodeJson($response);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(2, $payload['total']);
+        $this->assertArrayHasKey('items', $payload);
+    }
+
+    public function test_list_respects_limit_and_offset(): void
+    {
+        for ($i = 0; $i < 4; $i++) {
+            $this->savedJob();
+        }
+
+        $handler = new ListImportJobsHandler(
+            new ListImportJobsUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('GET', '/admin/import-jobs'))
+            ->withQueryParams(['limit' => '2', 'offset' => '2']);
+
+        $response = $handler->handle($request);
+        $payload  = $this->decodeJson($response);
+
+        $this->assertSame(4, $payload['total']);
+        $this->assertCount(2, $payload['items']);
+    }
+
+    // ── ListImportJobErrorsHandler ────────────────────────────────────────
+
+    public function test_list_errors_returns_error_envelope(): void
+    {
+        $id = $this->savedJob(status: ImportJob::STATUS_COMPLETED_WITH_ERRORS);
+        $this->jobs->appendErrors($id, [
+            new ImportJobError(rawRowNumber: 2, message: 'Bad date', rawSnippet: 'row2data'),
+            new ImportJobError(rawRowNumber: 5, message: 'Bad amount', rawSnippet: 'row5data'),
+        ]);
+
+        $handler = new ListImportJobErrorsHandler(
+            new ListImportJobErrorsUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/errors"))
+            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => (string) $id]);
+
+        $response = $handler->handle($request);
+        $payload  = $this->decodeJson($response);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(2, $payload['total']);
+        /** @var list<array<string, mixed>> $items */
+        $items = $payload['items'];
+        $this->assertSame(2, $items[0]['raw_row_number']);
+        $this->assertSame('Bad date', $items[0]['message']);
+        $this->assertSame('row2data', $items[0]['raw_snippet']);
+    }
+
+    public function test_list_errors_returns_empty_when_no_errors(): void
+    {
+        $id = $this->savedJob();
+
+        $handler = new ListImportJobErrorsHandler(
+            new ListImportJobErrorsUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/errors"))
+            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => (string) $id]);
+
+        $response = $handler->handle($request);
+        $payload  = $this->decodeJson($response);
+
+        $this->assertSame(0, $payload['total']);
+        $this->assertCount(0, $payload['items']);
+    }
+
+    // ── ExportImportJobJsonHandler ────────────────────────────────────────
+
+    public function test_export_json_returns_transaction_list(): void
+    {
+        $id = $this->savedJob();
+        $this->jobs->appendTransactions($id, [
+            new NormalizedTransaction(
+                rawRowNumber: 1,
+                transactionDate: '2026-05-01',
+                valueDate: '2026-05-01',
+                amountCents: 10000,
+                description: '入金',
+                counterparty: null,
+                balanceCents: null,
+                lineHash: 'sha256:abc',
+            ),
+        ]);
+
+        $handler = new ExportImportJobJsonHandler(
+            new ExportImportJobUseCase($this->jobs),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/export.json"))
+            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => (string) $id]);
+
+        $response = $handler->handle($request);
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var list<array<string, mixed>> $rows */
+        $rows = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertCount(1, $rows);
+        $this->assertSame('2026-05-01', $rows[0]['transaction_date']);
+        $this->assertSame(10000, $rows[0]['amount_cents']);
+        $this->assertArrayHasKey('schema_version', $rows[0]);
+        $this->assertArrayHasKey('line_hash', $rows[0]);
+        $this->assertArrayHasKey('raw_row_number', $rows[0]);
+    }
+
+    // ── ExportImportJobCsvHandler ─────────────────────────────────────────
+
+    public function test_export_csv_returns_text_csv(): void
+    {
+        $id = $this->savedJob();
+        $this->jobs->appendTransactions($id, [
+            new NormalizedTransaction(
+                rawRowNumber: 1,
+                transactionDate: '2026-05-01',
+                valueDate: '2026-05-01',
+                amountCents: -5000,
+                description: '出金',
+                counterparty: null,
+                balanceCents: null,
+                lineHash: 'sha256:def',
+            ),
+        ]);
+
+        $handler = new ExportImportJobCsvHandler(
+            new ExportImportJobUseCase($this->jobs),
+            $this->psr17(),
+            $this->psr17(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/export.csv"))
+            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => (string) $id]);
+
+        $response = $handler->handle($request);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertStringContainsString('text/csv', $response->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('attachment', $response->getHeaderLine('Content-Disposition'));
+        $body = (string) $response->getBody();
+        $this->assertStringContainsString('2026-05-01', $body);
+        $this->assertStringContainsString('-5000', $body);
+    }
+
+    public function test_export_csv_returns_400_without_org(): void
+    {
+        $handler = new ExportImportJobCsvHandler(
+            new ExportImportJobUseCase($this->jobs),
+            $this->psr17(),
+            $this->psr17(),
+            $this->problemFactory(),
+        );
+
+        $response = $handler->handle(
+            $this->request('GET', '/admin/import-jobs/1/export.csv')
+                ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
+        );
+
+        $this->assertSame(400, $response->getStatusCode());
+    }
+
+    // ── CreateImportJobHandler ────────────────────────────────────────────
+
+    public function test_create_returns_400_without_org(): void
+    {
+        $handler = new CreateImportJobHandler(
+            new CreateImportJobUseCase(
+                $this->jobs,
+                $this->presets,
+                $this->versions,
+                $this->storage,
+                new CsvParser(),
+                new NormalizationRunner(new TransformerRegistry()),
+                $this->audit,
+            ),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $response = $handler->handle($this->request('POST', '/admin/import-jobs'));
+
+        $this->assertSame(400, $response->getStatusCode());
+    }
+
+    public function test_create_throws_validation_when_file_missing(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        $handler = new CreateImportJobHandler(
+            new CreateImportJobUseCase(
+                $this->jobs,
+                $this->presets,
+                $this->versions,
+                $this->storage,
+                new CsvParser(),
+                new NormalizationRunner(new TransformerRegistry()),
+                $this->audit,
+            ),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $request = $this->withAuth($this->request('POST', '/admin/import-jobs'))
+            ->withParsedBody(['preset_id' => '1']);
+
+        $handler->handle($request);
+    }
+
+    public function test_create_throws_validation_when_preset_id_missing(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        $handler = new CreateImportJobHandler(
+            new CreateImportJobUseCase(
+                $this->jobs,
+                $this->presets,
+                $this->versions,
+                $this->storage,
+                new CsvParser(),
+                new NormalizationRunner(new TransformerRegistry()),
+                $this->audit,
+            ),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $psr17  = $this->psr17();
+        $stream = $psr17->createStream("日付,入金額,出金額,摘要\n2026/05/01,1000,,入金\n");
+        $upload = new UploadedFile($stream, (int) $stream->getSize(), UPLOAD_ERR_OK, 'test.csv', 'text/csv');
+
+        $request = $this->withAuth($this->request('POST', '/admin/import-jobs'))
+            ->withUploadedFiles(['file' => $upload])
+            ->withParsedBody([]); // no preset_id
+
+        $handler->handle($request);
+    }
+
+    public function test_create_returns_413_when_file_too_large(): void
+    {
+        $handler = new CreateImportJobHandler(
+            new CreateImportJobUseCase(
+                $this->jobs,
+                $this->presets,
+                $this->versions,
+                $this->storage,
+                new CsvParser(),
+                new NormalizationRunner(new TransformerRegistry()),
+                $this->audit,
+            ),
+            $this->jsonFactory(),
+            $this->problemFactory(),
+        );
+
+        $psr17  = $this->psr17();
+        $stream = $psr17->createStream('x');
+        // Report oversized file: > 10 MiB (10_485_760)
+        $upload = new UploadedFile($stream, 10_485_761, UPLOAD_ERR_OK, 'big.csv', 'text/csv');
+
+        $request = $this->withAuth($this->request('POST', '/admin/import-jobs'))
+            ->withUploadedFiles(['file' => $upload])
+            ->withParsedBody(['preset_id' => '1']);
+
+        $response = $handler->handle($request);
+
+        $this->assertSame(413, $response->getStatusCode());
+    }
+}
