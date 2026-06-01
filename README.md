@@ -2,7 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php)](https://www.php.net/)
-[![Public](https://img.shields.io/badge/status-public-blue)]()
+[![Backend CI](https://github.com/hideyukiMORI/nene-profile/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/hideyukiMORI/nene-profile/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/hideyukiMORI/nene-profile/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/hideyukiMORI/nene-profile/actions/workflows/frontend-ci.yml)
 
 **Bank CSV normalization — self-hosted for Japan SMB.**
 
@@ -49,9 +50,48 @@ matching, or dunning. Built on [NENE2](https://github.com/hideyukiMORI/NENE2).
 | **Agents** | [`AGENTS.md`](./AGENTS.md) |
 | **Language policy (JP/EN)** | [`docs/adr/0011-bilingual-jp-en-documentation.md`](./docs/adr/0011-bilingual-jp-en-documentation.md) |
 
+## Getting started (Docker)
+
+The Compose stack ships sensible MySQL defaults; copy the example env to customize.
+
+```bash
+cp .env.example .env            # uncomment the Docker / MySQL block for local Docker
+docker compose up -d --build    # MySQL → migrate → seed → Apache
+```
+
+Build the admin SPA into `public_html/admin/` (same-origin under `/admin/`):
+
+```bash
+npm --prefix frontend ci
+npm --prefix frontend run build
+```
+
+| Service | URL |
+| --- | --- |
+| Admin SPA | http://localhost:8490/admin/ |
+| API health | http://localhost:8490/health |
+| phpMyAdmin | http://localhost:8491 |
+
+Default seed superadmin: `admin@nene-profile.local` / `changeme`
+(override via `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`).
+
 ## Status
 
-**Phase 0** — governance and product design. Runtime scaffold follows Issues #4+.
+| Phase | Scope | State |
+| --- | --- | --- |
+| **Phase 0** | Governance, ADRs, binding CSV/output contracts | ✅ Complete |
+| **Phase 1** | Normalization API — preset CRUD, import jobs, transformers, export | ✅ Complete |
+| **Phase 2** | Admin SPA — organizations, users, presets, import jobs, settings, audit logs, dashboard | ✅ Mostly complete (visual column mapper pending) |
+| **Phase 3** | Official preset library + Clear handoff | Planned |
+
+See [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
+
+**Implemented:** multi-tenant auth (JWT + capability-based RBAC), 9 transformers
+(date formats incl. Japanese era `date_era`, debit/credit sign, yen→cents, regex
+extract — [ADR 0003](./docs/adr/0003-transform-fidelity.md)), immutable original-file
+storage with SHA-256 provenance ([ADR 0004](./docs/adr/0004-original-file-immutability.md)),
+full before/after audit trail, RFC 9457 problem responses, OpenAPI 3.1 contract,
+React 19 admin SPA, and CI quality gates (PHPStan L8 · CS-Fixer · PHPUnit · Vitest · Playwright E2E).
 
 ## Pipeline position
 
