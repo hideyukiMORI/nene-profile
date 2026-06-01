@@ -31,7 +31,8 @@ describe('ImportJobsPage', () => {
     renderWithProviders(<ImportJobsPage />)
 
     expect(await screen.findByText('bank.csv')).toBeInTheDocument()
-    expect(screen.getByText('エラーあり完了')).toBeInTheDocument()
+    // completed_with_errors renders an "エラー {count}" badge in the design.
+    expect(screen.getByText('エラー 2')).toBeInTheDocument()
   })
 
   it('expands the error rows for a job', async () => {

@@ -11,10 +11,9 @@ export function ExportJobActions({ jobId }: ExportJobActionsProps) {
   const { t } = useTranslation()
 
   return (
-    <span className="inline-flex gap-inline-sm">
+    <>
       <Button
-        variant="ghost"
-        size="sm"
+        variant="link"
         onClick={() => {
           void exportImportJob(jobId, 'json').catch(() => undefined)
         }}
@@ -22,14 +21,13 @@ export function ExportJobActions({ jobId }: ExportJobActionsProps) {
         {t('admin.importJobs.export.json')}
       </Button>
       <Button
-        variant="ghost"
-        size="sm"
+        variant="link"
         onClick={() => {
           void exportImportJob(jobId, 'csv').catch(() => undefined)
         }}
       >
         {t('admin.importJobs.export.csv')}
       </Button>
-    </span>
+    </>
   )
 }
