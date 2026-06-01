@@ -21,25 +21,32 @@ function AdminShell() {
   )
 }
 
-const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
-  { path: '/forbidden', element: <ForbiddenPage /> },
+const router = createBrowserRouter(
+  [
+    { path: '/login', element: <LoginPage /> },
+    { path: '/forbidden', element: <ForbiddenPage /> },
+    {
+      path: '/',
+      element: <AdminShell />,
+      children: [
+        { index: true, element: <HomePage /> },
+        { path: 'organizations', element: <OrganizationsPage /> },
+        { path: 'users', element: <UsersPage /> },
+        { path: 'mapping-presets', element: <MappingPresetsPage /> },
+        { path: 'import-jobs', element: <ImportJobsPage /> },
+        { path: 'settings', element: <SettingsPage /> },
+        { path: 'audit-logs', element: <AuditLogsPage /> },
+        { path: 'account', element: <AccountPage /> },
+      ],
+    },
+    { path: '*', element: <NotFoundPage /> },
+  ],
   {
-    path: '/',
-    element: <AdminShell />,
-    children: [
-      { index: true, element: <HomePage /> },
-      { path: 'organizations', element: <OrganizationsPage /> },
-      { path: 'users', element: <UsersPage /> },
-      { path: 'mapping-presets', element: <MappingPresetsPage /> },
-      { path: 'import-jobs', element: <ImportJobsPage /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'audit-logs', element: <AuditLogsPage /> },
-      { path: 'account', element: <AccountPage /> },
-    ],
+    // Tier A same-origin: the production bundle is served from /admin/, so the
+    // router must resolve routes against that base. In dev/test BASE_URL is '/'.
+    basename: import.meta.env.BASE_URL.replace(/\/$/, '') || '/',
   },
-  { path: '*', element: <NotFoundPage /> },
-])
+)
 
 export function AppRouter() {
   return <RouterProvider router={router} />

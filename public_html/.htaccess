@@ -1,13 +1,5 @@
 RewriteEngine On
 
-# When the admin SPA is built, serve its client-side routes from /admin/index.html.
-# API paths under /admin/ are excluded so they continue to PHP.
-RewriteCond %{DOCUMENT_ROOT}/admin/index.html -f
-RewriteCond %{REQUEST_URI} ^/admin/
-RewriteCond %{REQUEST_URI} !^/admin/(auth|organizations|users|mapping-presets|import-jobs|organization-settings|audit-logs)[/$]
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ /admin/index.html [L]
-
-# All other non-file requests go to the PHP router.
-RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
