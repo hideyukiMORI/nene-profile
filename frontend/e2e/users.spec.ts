@@ -72,10 +72,11 @@ test('create: succeeds with a selected role', async ({ page }) => {
   await page.getByRole('button', { name: 'ユーザーを作成' }).click()
   await page.getByLabel('メールアドレス').fill('new@example.com')
   await page.getByLabel('パスワード（8文字以上）').fill('supersecret')
-  await page.getByLabel('役割').selectOption('viewer')
+  // Role is a choice-card group in the design; pick 閲覧者 (viewer).
+  await page.getByText('閲覧者', { exact: true }).click()
   await page.getByTestId('user-create-submit').click()
 
-  await expect(page.getByRole('cell', { name: 'new@example.com', exact: true })).toBeVisible()
+  await expect(page.getByText('new@example.com', { exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: '閲覧者', exact: true })).toBeVisible()
 })
 

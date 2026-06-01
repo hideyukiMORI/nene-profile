@@ -108,33 +108,29 @@ export function OrganizationsPage() {
       />
 
       {creating ? (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card__body">
-            <CreateOrganizationForm
-              onCreated={() => {
-                setCreating(false)
-              }}
-              onCancel={() => {
-                setCreating(false)
-              }}
-            />
-          </div>
+        <div style={{ maxWidth: '680px', marginBottom: 20 }}>
+          <CreateOrganizationForm
+            onCreated={() => {
+              setCreating(false)
+            }}
+            onCancel={() => {
+              setCreating(false)
+            }}
+          />
         </div>
       ) : null}
 
       {editingOrg !== null ? (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card__body">
-            <EditOrganizationForm
-              organization={editingOrg}
-              onSaved={() => {
-                setEditingId(null)
-              }}
-              onCancel={() => {
-                setEditingId(null)
-              }}
-            />
-          </div>
+        <div style={{ maxWidth: '680px', marginBottom: 20 }}>
+          <EditOrganizationForm
+            organization={editingOrg}
+            onSaved={() => {
+              setEditingId(null)
+            }}
+            onCancel={() => {
+              setEditingId(null)
+            }}
+          />
         </div>
       ) : null}
 

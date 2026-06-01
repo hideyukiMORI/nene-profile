@@ -31,6 +31,11 @@ const statusLabelKey: Record<UserStatus, MessageKey> = {
   invited: 'admin.users.status.invited',
 }
 
+function initialsOf(email: string): string {
+  const local = email.split('@')[0] ?? ''
+  return (local.slice(0, 2) || 'U').toUpperCase()
+}
+
 /** Users admin screen: paginated list + create + edit + delete (admin). */
 export function UsersPage() {
   const { t } = useTranslation()
@@ -46,7 +51,14 @@ export function UsersPage() {
     {
       id: 'email',
       header: t('admin.users.col.email'),
-      render: (u) => <span className="primary-cell mono">{u.email}</span>,
+      render: (u) => (
+        <span className="row">
+          <span className="avatar avatar--sm" aria-hidden="true">
+            {initialsOf(u.email)}
+          </span>
+          <span className="primary-cell">{u.email}</span>
+        </span>
+      ),
     },
     {
       id: 'role',
@@ -106,33 +118,29 @@ export function UsersPage() {
       />
 
       {creating ? (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card__body">
-            <CreateUserForm
-              onCreated={() => {
-                setCreating(false)
-              }}
-              onCancel={() => {
-                setCreating(false)
-              }}
-            />
-          </div>
+        <div style={{ maxWidth: '680px', marginBottom: 20 }}>
+          <CreateUserForm
+            onCreated={() => {
+              setCreating(false)
+            }}
+            onCancel={() => {
+              setCreating(false)
+            }}
+          />
         </div>
       ) : null}
 
       {editing !== null ? (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card__body">
-            <EditUserForm
-              user={editing}
-              onSaved={() => {
-                setEditing(null)
-              }}
-              onCancel={() => {
-                setEditing(null)
-              }}
-            />
-          </div>
+        <div style={{ maxWidth: '680px', marginBottom: 20 }}>
+          <EditUserForm
+            user={editing}
+            onSaved={() => {
+              setEditing(null)
+            }}
+            onCancel={() => {
+              setEditing(null)
+            }}
+          />
         </div>
       ) : null}
 
