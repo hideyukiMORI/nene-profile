@@ -1996,3 +1996,15 @@ button.linkbtn {
   width: 32px;
   height: 32px;
 }
+
+/* small avatar used in audit-log actor cells (icon-filled) */
+.avatar--sm {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  font-size: 10px;
+}
+.avatar svg {
+  width: 14px;
+  height: 14px;
+}

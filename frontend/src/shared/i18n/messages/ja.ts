@@ -264,6 +264,7 @@ export const jaMessages = {
 
   // ── Audit logs ────────────────────────────────────────────────────────────
   'admin.auditLogs.title': '監査ログ',
+  'admin.auditLogs.subtitle': '組織内で行われた操作の記録です。',
   'admin.auditLogs.empty': '監査ログがまだありません。',
   'admin.auditLogs.error': '監査ログを取得できませんでした。',
   'admin.auditLogs.col.createdAt': '日時',
