@@ -22,6 +22,8 @@ export type IconName =
   | 'back'
   | 'search'
   | 'lock'
+  | 'close'
+  | 'arrowRight'
 
 /** Inline icon paths (24×24, currentColor stroke). Stroke width/size are set by
  * the design-system context classes (.nav__item svg, .btn svg, .iconbtn svg). */
@@ -133,6 +135,8 @@ const paths: Record<IconName, ReactElement> = {
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </>
   ),
+  close: <path d="M6 6l12 12M18 6L6 18" />,
+  arrowRight: <path d="M5 12h14M13 6l6 6-6 6" />,
 }
 
 export interface IconProps {

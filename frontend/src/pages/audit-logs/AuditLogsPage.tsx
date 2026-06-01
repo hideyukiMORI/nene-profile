@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuditLogs, type AuditLog } from '@/entities/audit-log'
-import { AuditLogChanges } from '@/features/audit-logs'
+import { AuditLogDiff } from '@/features/audit-logs'
 import { useTranslation } from '@/shared/i18n'
 import { AsyncBoundary, DataTable, PageHeader, Pagination, type Column } from '@/shared/ui'
 
@@ -41,7 +41,7 @@ export function AuditLogsPage() {
     {
       id: 'changes',
       header: t('admin.auditLogs.col.changes'),
-      render: (l) => <AuditLogChanges before={l.before} after={l.after} />,
+      render: (l) => <AuditLogDiff log={l} />,
     },
   ]
 

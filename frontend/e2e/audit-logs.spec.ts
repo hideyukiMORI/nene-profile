@@ -34,15 +34,20 @@ test('renders audit entries with actor and entity', async ({ page }) => {
   await expect(page.getByRole('cell', { name: '#5', exact: true })).toBeVisible()
 })
 
-test('toggles the before/after diff', async ({ page }) => {
+test('opens the field-level diff drawer', async ({ page }) => {
   await openAudit(page, [entry()])
 
   await page.getByRole('button', { name: '差分を表示' }).click()
 
-  await expect(page.getByText('変更前')).toBeVisible()
-  await expect(page.getByText('変更後')).toBeVisible()
-  await expect(page.getByText('"name": "Old"')).toBeVisible()
-  await expect(page.getByText('"name": "New"')).toBeVisible()
+  const drawer = page.getByRole('dialog', { name: '変更内容' })
+  await expect(drawer).toBeVisible()
+  await expect(drawer.getByText('name', { exact: true })).toBeVisible()
+  await expect(drawer.getByText('Old', { exact: true })).toBeVisible()
+  await expect(drawer.getByText('New', { exact: true })).toBeVisible()
+
+  // Closes via the close button.
+  await drawer.getByRole('button', { name: '閉じる' }).click()
+  await expect(page.getByRole('dialog', { name: '変更内容' })).toHaveCount(0)
 })
 
 test('labels a system actor when there is no user', async ({ page }) => {

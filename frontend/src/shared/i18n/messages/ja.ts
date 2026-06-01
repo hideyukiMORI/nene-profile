@@ -272,5 +272,10 @@ export const jaMessages = {
   'admin.auditLogs.changes.deleted': '削除',
   'admin.auditLogs.changes.before': '変更前',
   'admin.auditLogs.changes.after': '変更後',
+  'admin.auditLogs.changes.empty': '（なし）',
+  'admin.auditLogs.changes.none': '変更されたフィールドはありません。',
   'admin.auditLogs.viewDiff': '差分を表示',
+  'admin.auditLogs.drawer.title': '変更内容',
+  'admin.auditLogs.drawer.subject': '対象: {{entity}}',
+  'admin.auditLogs.drawer.close': '閉じる',
 } as const
