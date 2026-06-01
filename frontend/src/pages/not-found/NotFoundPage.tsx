@@ -1,25 +1,25 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from '@/shared/i18n'
-import { Stack, Text } from '@/shared/ui'
+import { Icon } from '@/shared/ui'
 
 export function NotFoundPage() {
   const { t } = useTranslation()
 
   return (
-    <main className="flex min-h-full items-center justify-center p-inline-lg">
-      <Stack gap="md">
-        <Text as="h1" variant="display">
-          404
-        </Text>
-        <Text variant="body" tone="muted">
-          {t('common.error.notFound')}
-        </Text>
-        <Link to="/">
-          <Text as="span" variant="body" tone="muted">
+    <div className="errpage">
+      <div className="errcard">
+        <div className="errico ic-tint-blue">
+          <Icon name="search" />
+        </div>
+        <div className="errcode">404</div>
+        <p>{t('common.error.notFound')}</p>
+        <div className="err-actions">
+          <Link className="btn btn--primary" to="/">
+            <Icon name="back" />
             {t('common.actions.back')}
-          </Text>
-        </Link>
-      </Stack>
-    </main>
+          </Link>
+        </div>
+      </div>
+    </div>
   )
 }

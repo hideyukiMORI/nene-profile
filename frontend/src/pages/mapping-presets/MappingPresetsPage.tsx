@@ -2,7 +2,15 @@ import { useState } from 'react'
 import { useMappingPreset, useMappingPresets, type MappingPreset } from '@/entities/mapping-preset'
 import { CreatePresetForm, DeletePresetAction, EditPresetForm } from '@/features/mapping-presets'
 import { useTranslation } from '@/shared/i18n'
-import { AsyncBoundary, Button, DataTable, Pagination, Stack, Text, type Column } from '@/shared/ui'
+import {
+  AsyncBoundary,
+  Button,
+  DataTable,
+  Icon,
+  PageHeader,
+  Pagination,
+  type Column,
+} from '@/shared/ui'
 
 const PAGE_SIZE = 20
 
@@ -19,7 +27,11 @@ export function MappingPresetsPage() {
   const rows = query.data?.items ?? []
 
   const columns: readonly Column<MappingPreset>[] = [
-    { id: 'name', header: t('admin.mappingPresets.col.name'), render: (p) => p.name },
+    {
+      id: 'name',
+      header: t('admin.mappingPresets.col.name'),
+      render: (p) => <span className="primary-cell">{p.name}</span>,
+    },
     {
       id: 'bankLabel',
       header: t('admin.mappingPresets.col.bankLabel'),
@@ -28,17 +40,16 @@ export function MappingPresetsPage() {
     {
       id: 'version',
       header: t('admin.mappingPresets.col.version'),
-      render: (p) => `v${String(p.versionNumber)}`,
+      render: (p) => <span className="tag">{`v${String(p.versionNumber)}`}</span>,
     },
     {
       id: 'actions',
       header: t('admin.mappingPresets.col.actions'),
       align: 'end',
       render: (p) => (
-        <span className="inline-flex gap-inline-sm">
+        <>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="link"
             onClick={() => {
               setCreating(false)
               setEditingId(p.id)
@@ -47,7 +58,7 @@ export function MappingPresetsPage() {
             {t('common.actions.edit')}
           </Button>
           <DeletePresetAction preset={p} />
-        </span>
+        </>
       ),
     },
   ]
@@ -56,60 +67,64 @@ export function MappingPresetsPage() {
   const to = Math.min(offset + PAGE_SIZE, total)
 
   return (
-    <Stack gap="lg">
-      <div className="flex items-center justify-between">
-        <Text as="h1" variant="display">
-          {t('admin.mappingPresets.title')}
-        </Text>
-        {!creating && editingId === null ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              setCreating(true)
-            }}
-          >
-            {t('admin.mappingPresets.newButton')}
-          </Button>
-        ) : null}
-      </div>
+    <>
+      <PageHeader
+        title={t('admin.mappingPresets.title')}
+        actions={
+          !creating && editingId === null ? (
+            <Button
+              onClick={() => {
+                setCreating(true)
+              }}
+            >
+              <Icon name="plus" />
+              {t('admin.mappingPresets.newButton')}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {editingId !== null ? (
-        <div className="rounded-md border border-border bg-surface p-inline-lg">
-          <AsyncBoundary
-            isLoading={editQuery.isPending}
-            isError={editQuery.isError}
-            loadingLabel={t('common.state.loading')}
-            errorLabel={t('admin.mappingPresets.error')}
-            retryLabel={t('common.actions.retry')}
-            onRetry={() => {
-              void editQuery.refetch()
-            }}
-          >
-            {editQuery.data !== undefined ? (
-              <EditPresetForm
-                preset={editQuery.data}
-                onSaved={() => {
-                  setEditingId(null)
-                }}
-                onCancel={() => {
-                  setEditingId(null)
-                }}
-              />
-            ) : null}
-          </AsyncBoundary>
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card__body">
+            <AsyncBoundary
+              isLoading={editQuery.isPending}
+              isError={editQuery.isError}
+              loadingLabel={t('common.state.loading')}
+              errorLabel={t('admin.mappingPresets.error')}
+              retryLabel={t('common.actions.retry')}
+              onRetry={() => {
+                void editQuery.refetch()
+              }}
+            >
+              {editQuery.data !== undefined ? (
+                <EditPresetForm
+                  preset={editQuery.data}
+                  onSaved={() => {
+                    setEditingId(null)
+                  }}
+                  onCancel={() => {
+                    setEditingId(null)
+                  }}
+                />
+              ) : null}
+            </AsyncBoundary>
+          </div>
         </div>
       ) : null}
 
       {creating ? (
-        <div className="rounded-md border border-border bg-surface p-inline-lg">
-          <CreatePresetForm
-            onCreated={() => {
-              setCreating(false)
-            }}
-            onCancel={() => {
-              setCreating(false)
-            }}
-          />
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card__body">
+            <CreatePresetForm
+              onCreated={() => {
+                setCreating(false)
+              }}
+              onCancel={() => {
+                setCreating(false)
+              }}
+            />
+          </div>
         </div>
       ) : null}
 
@@ -123,30 +138,30 @@ export function MappingPresetsPage() {
           void query.refetch()
         }}
       >
-        <Stack gap="md">
-          <DataTable
-            columns={columns}
-            rows={rows}
-            rowKey={(p) => p.id}
-            emptyLabel={t('admin.mappingPresets.empty')}
-          />
-          {total > 0 ? (
-            <Pagination
-              summary={t('common.pagination.summary', { from, to, total })}
-              prevLabel={t('common.pagination.prev')}
-              nextLabel={t('common.pagination.next')}
-              canPrev={offset > 0}
-              canNext={offset + PAGE_SIZE < total}
-              onPrev={() => {
-                setOffset((current) => Math.max(0, current - PAGE_SIZE))
-              }}
-              onNext={() => {
-                setOffset((current) => current + PAGE_SIZE)
-              }}
-            />
-          ) : null}
-        </Stack>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(p) => p.id}
+          emptyLabel={t('admin.mappingPresets.empty')}
+          footer={
+            total > 0 ? (
+              <Pagination
+                summary={t('common.pagination.summary', { from, to, total })}
+                prevLabel={t('common.pagination.prev')}
+                nextLabel={t('common.pagination.next')}
+                canPrev={offset > 0}
+                canNext={offset + PAGE_SIZE < total}
+                onPrev={() => {
+                  setOffset((current) => Math.max(0, current - PAGE_SIZE))
+                }}
+                onNext={() => {
+                  setOffset((current) => current + PAGE_SIZE)
+                }}
+              />
+            ) : undefined
+          }
+        />
       </AsyncBoundary>
-    </Stack>
+    </>
   )
 }

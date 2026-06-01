@@ -52,19 +52,24 @@ export function ConfirmDialog({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-inline-lg">
+    <div
+      className="fixed inset-0 flex items-center justify-center p-inline-lg"
+      style={{ zIndex: 90 }}
+    >
       <button
         type="button"
         aria-label={cancelLabel}
         onClick={onCancel}
-        className="absolute inset-0 bg-text-primary/40"
+        className="absolute inset-0"
+        style={{ background: 'rgba(8,14,22,.46)' }}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={messageId}
-        className="relative w-full max-w-sm rounded-md border border-border bg-surface p-inline-lg"
+        className="card relative w-full p-inline-lg"
+        style={{ maxWidth: '380px', boxShadow: 'var(--shadow-pop)' }}
       >
         <Stack gap="md">
           <Text as="h2" variant="heading">

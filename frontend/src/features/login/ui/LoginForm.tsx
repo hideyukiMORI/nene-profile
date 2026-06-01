@@ -1,11 +1,10 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, Field, Input, Stack, Text } from '@/shared/ui'
+import { Button, Field, Input } from '@/shared/ui'
 import { useLoginForm } from '../hooks/use-login-form'
 
 /**
  * Login form. All copy comes from the i18n catalog; logic lives in the hook.
- * Renders the four UI states implicitly (idle / submitting / error / success →
- * navigation handled by the hook).
+ * Rendered inside the split-screen auth layout (LoginPage).
  */
 export function LoginForm() {
   const { t } = useTranslation()
@@ -19,11 +18,7 @@ export function LoginForm() {
       }}
       noValidate
     >
-      <Stack gap="lg">
-        <Text as="h1" variant="display">
-          {t('admin.auth.title')}
-        </Text>
-
+      <div className="form-grid">
         <Field
           label={t('admin.auth.email')}
           {...(formState.errors.email ? { error: t('admin.auth.emailRequired') } : {})}
@@ -55,15 +50,22 @@ export function LoginForm() {
         </Field>
 
         {error !== null ? (
-          <Text variant="caption" tone="danger">
+          <span className="field__error" role="alert">
             {error.status === 401 ? t('admin.auth.failed') : t('common.error.generic')}
-          </Text>
+          </span>
         ) : null}
 
-        <Button type="submit" disabled={isSubmitting} data-testid="login-submit">
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          block
+          disabled={isSubmitting}
+          data-testid="login-submit"
+        >
           {isSubmitting ? t('common.state.submitting') : t('admin.auth.submit')}
         </Button>
-      </Stack>
+      </div>
     </form>
   )
 }

@@ -1,6 +1,7 @@
 import { useImportJobs, type ImportJob, type ImportJobStatus } from '@/entities/import-job'
+import { JobStatusBadge } from '@/features/import-jobs'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
-import { AsyncBoundary, DataTable, Stack, Text, type Column } from '@/shared/ui'
+import { AsyncBoundary, DataTable, Icon, PageHeader, type Column } from '@/shared/ui'
 
 const RECENT_LIMIT = 5
 
@@ -12,51 +13,59 @@ const statusLabelKey: Record<ImportJobStatus, MessageKey> = {
   failed: 'admin.importJobs.status.failed',
 }
 
-function errorRatePercent(jobs: readonly ImportJob[]): string {
-  const totals = jobs.reduce(
+function totals(jobs: readonly ImportJob[]): { rows: number; errors: number } {
+  return jobs.reduce(
     (acc, job) => ({ rows: acc.rows + job.rowCount, errors: acc.errors + job.errorCount }),
     { rows: 0, errors: 0 },
   )
-  if (totals.rows === 0) return '0.0'
-  return ((totals.errors / totals.rows) * 100).toFixed(1)
 }
 
-/** Dashboard: recent import jobs and an aggregate error rate. */
+function errorRatePercent(jobs: readonly ImportJob[]): string {
+  const { rows, errors } = totals(jobs)
+  if (rows === 0) return '0.0'
+  return ((errors / rows) * 100).toFixed(1)
+}
+
+/** Dashboard: aggregate stats + recent import jobs. */
 export function HomePage() {
   const { t } = useTranslation()
   const query = useImportJobs({ limit: RECENT_LIMIT, offset: 0 })
   const jobs = query.data?.items ?? []
+  const total = query.data?.total ?? 0
+  const recentRows = totals(jobs).rows
 
   const columns: readonly Column<ImportJob>[] = [
     {
       id: 'filename',
       header: t('admin.importJobs.col.filename'),
-      render: (j) => j.originalFilename,
+      render: (j) => (
+        <span className="row">
+          <span className="primary-cell mono">{j.originalFilename}</span>
+        </span>
+      ),
     },
     {
       id: 'status',
       header: t('admin.importJobs.col.status'),
-      render: (j) => t(statusLabelKey[j.status]),
+      render: (j) => <JobStatusBadge status={j.status} label={t(statusLabelKey[j.status])} />,
     },
     {
       id: 'rowCount',
       header: t('admin.importJobs.col.rowCount'),
       align: 'end',
-      render: (j) => j.rowCount,
+      render: (j) => <span className="tnum">{j.rowCount}</span>,
     },
     {
       id: 'errorCount',
       header: t('admin.importJobs.col.errorCount'),
       align: 'end',
-      render: (j) => j.errorCount,
+      render: (j) => <span className="tnum">{j.errorCount}</span>,
     },
   ]
 
   return (
-    <Stack gap="lg">
-      <Text as="h1" variant="display">
-        {t('admin.dashboard.title')}
-      </Text>
+    <>
+      <PageHeader title={t('admin.dashboard.title')} sub={t('admin.dashboard.subtitle')} />
 
       <AsyncBoundary
         isLoading={query.isPending}
@@ -69,34 +78,57 @@ export function HomePage() {
         }}
       >
         {jobs.length === 0 ? (
-          <Text variant="body" tone="muted">
-            {t('admin.dashboard.empty')}
-          </Text>
+          <div className="empty-block">{t('admin.dashboard.empty')}</div>
         ) : (
-          <Stack gap="lg">
-            <div className="max-w-xs rounded-md border border-border bg-surface p-inline-lg">
-              <Stack gap="xs">
-                <Text variant="caption" tone="muted">
-                  {t('admin.dashboard.errorRate')}
-                </Text>
-                <Text variant="display">{`${errorRatePercent(jobs)}%`}</Text>
-              </Stack>
+          <>
+            <div className="stat-grid">
+              <div className="stat">
+                <div className="stat__top">
+                  <div className="stat__label">{t('admin.dashboard.stat.jobs')}</div>
+                  <div className="stat__ic ic-tint-blue">
+                    <Icon name="jobs" />
+                  </div>
+                </div>
+                <div className="stat__val tnum">{total}</div>
+                <div className="stat__delta flat">{t('admin.dashboard.stat.jobsSub')}</div>
+              </div>
+              <div className="stat">
+                <div className="stat__top">
+                  <div className="stat__label">{t('admin.dashboard.errorRate')}</div>
+                  <div className="stat__ic ic-tint-amber">
+                    <Icon name="percent" />
+                  </div>
+                </div>
+                <div className="stat__val tnum">
+                  {errorRatePercent(jobs)}
+                  <small>%</small>
+                </div>
+                <div className="stat__delta flat">{t('admin.dashboard.stat.recentSub')}</div>
+              </div>
+              <div className="stat">
+                <div className="stat__top">
+                  <div className="stat__label">{t('admin.dashboard.stat.rows')}</div>
+                  <div className="stat__ic ic-tint-green">
+                    <Icon name="check" />
+                  </div>
+                </div>
+                <div className="stat__val tnum">{recentRows}</div>
+                <div className="stat__delta flat">{t('admin.dashboard.stat.recentSub')}</div>
+              </div>
             </div>
 
-            <Stack gap="md">
-              <Text as="h2" variant="heading">
-                {t('admin.dashboard.recentJobs')}
-              </Text>
-              <DataTable
-                columns={columns}
-                rows={jobs}
-                rowKey={(j) => j.id}
-                emptyLabel={t('admin.dashboard.empty')}
-              />
-            </Stack>
-          </Stack>
+            <div className="sec-head">
+              <div className="sec-title">{t('admin.dashboard.recentJobs')}</div>
+            </div>
+            <DataTable
+              columns={columns}
+              rows={jobs}
+              rowKey={(j) => j.id}
+              emptyLabel={t('admin.dashboard.empty')}
+            />
+          </>
         )}
       </AsyncBoundary>
-    </Stack>
+    </>
   )
 }

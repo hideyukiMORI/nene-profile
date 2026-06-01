@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button } from '@/shared/ui/primitives/Button'
 import { Spinner } from '@/shared/ui/primitives/Spinner'
-import { Stack } from '@/shared/ui/primitives/Stack'
-import { Text } from '@/shared/ui/primitives/Text'
 
 export interface AsyncBoundaryProps {
   isLoading: boolean
@@ -17,8 +15,7 @@ export interface AsyncBoundaryProps {
 /**
  * Renders the loading / error states of an async resource and otherwise its
  * children. Centralises the query-state UX so every resource screen behaves the
- * same way (terminology.md: consistent states). Empty state is the caller's job
- * — it depends on the resolved data shape.
+ * same way. Empty state is the caller's job — it depends on the resolved shape.
  */
 export function AsyncBoundary({
   isLoading,
@@ -31,29 +28,27 @@ export function AsyncBoundary({
 }: AsyncBoundaryProps) {
   if (isLoading) {
     return (
-      <Stack gap="sm">
+      <div className="state-block">
         <Spinner label={loadingLabel} />
-        <Text variant="caption" tone="muted">
-          {loadingLabel}
-        </Text>
-      </Stack>
+        <span>{loadingLabel}</span>
+      </div>
     )
   }
 
   if (isError) {
     return (
-      <Stack gap="sm">
-        <Text variant="body" tone="danger">
-          {errorLabel}
-        </Text>
-        {onRetry !== undefined ? (
-          <div>
-            <Button variant="secondary" size="sm" onClick={onRetry}>
-              {retryLabel}
-            </Button>
-          </div>
-        ) : null}
-      </Stack>
+      <div className="card">
+        <div className="card__body stack-sm">
+          <span style={{ color: 'var(--danger)', fontWeight: 600 }}>{errorLabel}</span>
+          {onRetry !== undefined ? (
+            <div>
+              <Button variant="secondary" size="sm" onClick={onRetry}>
+                {retryLabel}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </div>
     )
   }
 

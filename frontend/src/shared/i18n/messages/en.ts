@@ -43,6 +43,13 @@ export const enMessages: MessageCatalog = {
   'admin.auth.failed': 'Invalid email or password.',
   'admin.auth.emailRequired': 'Email is required.',
   'admin.auth.passwordRequired': 'Password is required.',
+  'admin.auth.subtitle': 'Sign in to the admin console.',
+  'admin.auth.brandHeadline': 'Import bank deposits, accurately and reliably.',
+  'admin.auth.brandLead':
+    'CSV import, validation, and audit in one admin console — a dependable base for accounting operations.',
+  'admin.auth.point.audit': 'Every action recorded in the audit log',
+  'admin.auth.point.validate': 'Automatic row-level validation before import',
+  'admin.auth.point.presets': 'Per-bank mapping presets',
   'admin.account.signedInAs': 'Signed in as {{email}}',
   'admin.account.title': 'Account',
   'admin.account.changePassword.title': 'Change password',
@@ -66,12 +73,26 @@ export const enMessages: MessageCatalog = {
   'admin.nav.auditLogs': 'Audit logs',
   'admin.nav.settings': 'Organization settings',
   'admin.nav.account': 'Account',
+  'admin.nav.group.overview': 'Overview',
+  'admin.nav.group.masters': 'Master data',
+  'admin.nav.group.import': 'Imports',
+  'admin.nav.group.system': 'System',
+
+  // ── App shell ─────────────────────────────────────────────────────────────
+  'admin.shell.brandName': 'NeNe Profile',
+  'admin.shell.brandTagline': 'Payment import console',
+  'admin.shell.menu': 'Menu',
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   'admin.dashboard.title': 'Dashboard',
   'admin.dashboard.recentJobs': 'Recent import jobs',
   'admin.dashboard.errorRate': 'Error rate',
   'admin.dashboard.empty': 'No jobs have been run yet.',
+  'admin.dashboard.subtitle': 'Import activity overview',
+  'admin.dashboard.stat.jobs': 'Import jobs',
+  'admin.dashboard.stat.jobsSub': 'All-time total',
+  'admin.dashboard.stat.rows': 'Imported rows',
+  'admin.dashboard.stat.recentSub': 'Recent jobs',
 
   // ── Organizations ─────────────────────────────────────────────────────────
   'admin.organizations.title': 'Organizations',

@@ -36,8 +36,13 @@ describe('HomePage dashboard', () => {
 
     renderWithProviders(<HomePage />)
 
-    // 5 errors / 100 rows = 5.0%
-    expect(await screen.findByText('5.0%')).toBeInTheDocument()
+    // 5 errors / 100 rows = 5.0% (rendered as "5.0" + a <small>%</small> in the stat card)
+    expect(
+      await screen.findByText(
+        (_content, element) =>
+          element?.classList.contains('stat__val') === true && element.textContent === '5.0%',
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByText('a.csv')).toBeInTheDocument()
     expect(screen.getByText('b.csv')).toBeInTheDocument()
   })

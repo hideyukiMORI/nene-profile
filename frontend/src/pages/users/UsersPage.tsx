@@ -2,7 +2,15 @@ import { useState } from 'react'
 import { useUsers, type User, type UserRole, type UserStatus } from '@/entities/user'
 import { CreateUserForm, DeleteUserAction, EditUserForm } from '@/features/users'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
-import { AsyncBoundary, Button, DataTable, Pagination, Stack, Text, type Column } from '@/shared/ui'
+import {
+  AsyncBoundary,
+  Button,
+  DataTable,
+  Icon,
+  PageHeader,
+  Pagination,
+  type Column,
+} from '@/shared/ui'
 
 const PAGE_SIZE = 20
 
@@ -11,6 +19,12 @@ const roleLabelKey: Record<UserRole, MessageKey> = {
   admin: 'admin.users.role.admin',
   member: 'admin.users.role.member',
   viewer: 'admin.users.role.viewer',
+}
+const roleClass: Record<UserRole, string> = {
+  superadmin: 'role--admin',
+  admin: 'role--admin',
+  member: 'role--member',
+  viewer: 'role--viewer',
 }
 const statusLabelKey: Record<UserStatus, MessageKey> = {
   active: 'admin.users.status.active',
@@ -29,22 +43,34 @@ export function UsersPage() {
   const rows = query.data?.items ?? []
 
   const columns: readonly Column<User>[] = [
-    { id: 'email', header: t('admin.users.col.email'), render: (u) => u.email },
-    { id: 'role', header: t('admin.users.col.role'), render: (u) => t(roleLabelKey[u.role]) },
+    {
+      id: 'email',
+      header: t('admin.users.col.email'),
+      render: (u) => <span className="primary-cell mono">{u.email}</span>,
+    },
+    {
+      id: 'role',
+      header: t('admin.users.col.role'),
+      render: (u) => <span className={`role ${roleClass[u.role]}`}>{t(roleLabelKey[u.role])}</span>,
+    },
     {
       id: 'status',
       header: t('admin.users.col.status'),
-      render: (u) => t(statusLabelKey[u.status]),
+      render: (u) => (
+        <span className={`badge badge--${u.status === 'active' ? 'ok' : 'neutral'}`}>
+          <span className="dot" />
+          {t(statusLabelKey[u.status])}
+        </span>
+      ),
     },
     {
       id: 'actions',
       header: t('admin.users.col.actions'),
       align: 'end',
       render: (u) => (
-        <span className="inline-flex gap-inline-sm">
+        <>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="link"
             onClick={() => {
               setCreating(false)
               setEditing(u)
@@ -53,7 +79,7 @@ export function UsersPage() {
             {t('common.actions.edit')}
           </Button>
           <DeleteUserAction user={u} />
-        </span>
+        </>
       ),
     },
   ]
@@ -62,47 +88,51 @@ export function UsersPage() {
   const to = Math.min(offset + PAGE_SIZE, total)
 
   return (
-    <Stack gap="lg">
-      <div className="flex items-center justify-between">
-        <Text as="h1" variant="display">
-          {t('admin.users.title')}
-        </Text>
-        {!creating && editing === null ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              setCreating(true)
-            }}
-          >
-            {t('admin.users.newButton')}
-          </Button>
-        ) : null}
-      </div>
+    <>
+      <PageHeader
+        title={t('admin.users.title')}
+        actions={
+          !creating && editing === null ? (
+            <Button
+              onClick={() => {
+                setCreating(true)
+              }}
+            >
+              <Icon name="plus" />
+              {t('admin.users.newButton')}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {creating ? (
-        <div className="rounded-md border border-border bg-surface p-inline-lg">
-          <CreateUserForm
-            onCreated={() => {
-              setCreating(false)
-            }}
-            onCancel={() => {
-              setCreating(false)
-            }}
-          />
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card__body">
+            <CreateUserForm
+              onCreated={() => {
+                setCreating(false)
+              }}
+              onCancel={() => {
+                setCreating(false)
+              }}
+            />
+          </div>
         </div>
       ) : null}
 
       {editing !== null ? (
-        <div className="rounded-md border border-border bg-surface p-inline-lg">
-          <EditUserForm
-            user={editing}
-            onSaved={() => {
-              setEditing(null)
-            }}
-            onCancel={() => {
-              setEditing(null)
-            }}
-          />
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card__body">
+            <EditUserForm
+              user={editing}
+              onSaved={() => {
+                setEditing(null)
+              }}
+              onCancel={() => {
+                setEditing(null)
+              }}
+            />
+          </div>
         </div>
       ) : null}
 
@@ -116,30 +146,30 @@ export function UsersPage() {
           void query.refetch()
         }}
       >
-        <Stack gap="md">
-          <DataTable
-            columns={columns}
-            rows={rows}
-            rowKey={(u) => u.id}
-            emptyLabel={t('admin.users.empty')}
-          />
-          {total > 0 ? (
-            <Pagination
-              summary={t('common.pagination.summary', { from, to, total })}
-              prevLabel={t('common.pagination.prev')}
-              nextLabel={t('common.pagination.next')}
-              canPrev={offset > 0}
-              canNext={offset + PAGE_SIZE < total}
-              onPrev={() => {
-                setOffset((current) => Math.max(0, current - PAGE_SIZE))
-              }}
-              onNext={() => {
-                setOffset((current) => current + PAGE_SIZE)
-              }}
-            />
-          ) : null}
-        </Stack>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(u) => u.id}
+          emptyLabel={t('admin.users.empty')}
+          footer={
+            total > 0 ? (
+              <Pagination
+                summary={t('common.pagination.summary', { from, to, total })}
+                prevLabel={t('common.pagination.prev')}
+                nextLabel={t('common.pagination.next')}
+                canPrev={offset > 0}
+                canNext={offset + PAGE_SIZE < total}
+                onPrev={() => {
+                  setOffset((current) => Math.max(0, current - PAGE_SIZE))
+                }}
+                onNext={() => {
+                  setOffset((current) => current + PAGE_SIZE)
+                }}
+              />
+            ) : undefined
+          }
+        />
       </AsyncBoundary>
-    </Stack>
+    </>
   )
 }

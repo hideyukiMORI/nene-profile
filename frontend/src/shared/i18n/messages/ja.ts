@@ -48,6 +48,13 @@ export const jaMessages = {
   'admin.auth.failed': 'メールアドレスまたはパスワードが正しくありません。',
   'admin.auth.emailRequired': 'メールアドレスを入力してください。',
   'admin.auth.passwordRequired': 'パスワードを入力してください。',
+  'admin.auth.subtitle': '管理コンソールにサインインします。',
+  'admin.auth.brandHeadline': '銀行入金を、確実に・正確に取り込む。',
+  'admin.auth.brandLead':
+    'CSV 取り込みから検証、監査までを一つの管理コンソールで。経理業務の堅実な基盤に。',
+  'admin.auth.point.audit': 'すべての操作を監査ログに記録',
+  'admin.auth.point.validate': '取込前に行単位で自動検証',
+  'admin.auth.point.presets': '銀行ごとのマッピングプリセット',
   'admin.account.signedInAs': '{{email}} でログイン中',
   'admin.account.title': 'アカウント',
   'admin.account.changePassword.title': 'パスワード変更',
@@ -71,12 +78,26 @@ export const jaMessages = {
   'admin.nav.auditLogs': '監査ログ',
   'admin.nav.settings': '組織設定',
   'admin.nav.account': 'アカウント',
+  'admin.nav.group.overview': '概要',
+  'admin.nav.group.masters': 'マスタ管理',
+  'admin.nav.group.import': '入金インポート',
+  'admin.nav.group.system': 'システム',
+
+  // ── App shell ─────────────────────────────────────────────────────────────
+  'admin.shell.brandName': 'NeNe Profile',
+  'admin.shell.brandTagline': '入金管理コンソール',
+  'admin.shell.menu': 'メニュー',
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   'admin.dashboard.title': 'ダッシュボード',
   'admin.dashboard.recentJobs': '最近のインポートジョブ',
   'admin.dashboard.errorRate': 'エラー率',
   'admin.dashboard.empty': 'まだジョブの実行履歴がありません。',
+  'admin.dashboard.subtitle': '入金インポートの稼働状況',
+  'admin.dashboard.stat.jobs': 'インポートジョブ',
+  'admin.dashboard.stat.jobsSub': '全期間の累計',
+  'admin.dashboard.stat.rows': '取込行数',
+  'admin.dashboard.stat.recentSub': '直近のジョブ',
 
   // ── Organizations ─────────────────────────────────────────────────────────
   'admin.organizations.title': '組織一覧',
