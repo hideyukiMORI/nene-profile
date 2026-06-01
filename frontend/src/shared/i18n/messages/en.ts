@@ -271,5 +271,10 @@ export const enMessages: MessageCatalog = {
   'admin.auditLogs.changes.deleted': 'Deleted',
   'admin.auditLogs.changes.before': 'Before',
   'admin.auditLogs.changes.after': 'After',
+  'admin.auditLogs.changes.empty': '(none)',
+  'admin.auditLogs.changes.none': 'No fields changed.',
   'admin.auditLogs.viewDiff': 'View diff',
+  'admin.auditLogs.drawer.title': 'Change details',
+  'admin.auditLogs.drawer.subject': 'Target: {{entity}}',
+  'admin.auditLogs.drawer.close': 'Close',
 }

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -19,7 +19,7 @@ const entry = {
 }
 
 describe('AuditLogsPage', () => {
-  it('renders audit entries and toggles the before/after diff', async () => {
+  it('renders audit entries and opens the field-level diff drawer', async () => {
     server.use(
       http.get('/admin/audit-logs', () =>
         HttpResponse.json({ items: [entry], total: 1, limit: 20, offset: 0 }),
@@ -35,8 +35,11 @@ describe('AuditLogsPage', () => {
 
     await user.click(screen.getByRole('button', { name: '差分を表示' }))
 
-    expect(await screen.findByText(/"name": "Old"/)).toBeInTheDocument()
-    expect(screen.getByText(/"name": "New"/)).toBeInTheDocument()
+    // Drawer opens with a field-by-field before → after diff.
+    const drawer = await screen.findByRole('dialog', { name: '変更内容' })
+    expect(within(drawer).getByText('name')).toBeInTheDocument()
+    expect(within(drawer).getByText('Old')).toBeInTheDocument()
+    expect(within(drawer).getByText('New')).toBeInTheDocument()
   })
 
   it('shows the empty state when there are no logs', async () => {

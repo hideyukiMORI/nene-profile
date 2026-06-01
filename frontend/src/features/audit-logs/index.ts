@@ -1,1 +1,1 @@
-export { AuditLogChanges } from './ui/AuditLogChanges'
+export { AuditLogDiff } from './ui/AuditLogDiff'
