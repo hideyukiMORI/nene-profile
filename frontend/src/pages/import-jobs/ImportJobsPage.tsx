@@ -132,17 +132,15 @@ export function ImportJobsPage() {
       />
 
       {creating ? (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card__body">
-            <UploadJobForm
-              onUploaded={() => {
-                setCreating(false)
-              }}
-              onCancel={() => {
-                setCreating(false)
-              }}
-            />
-          </div>
+        <div style={{ maxWidth: '680px', marginBottom: 20 }}>
+          <UploadJobForm
+            onUploaded={() => {
+              setCreating(false)
+            }}
+            onCancel={() => {
+              setCreating(false)
+            }}
+          />
         </div>
       ) : null}
 

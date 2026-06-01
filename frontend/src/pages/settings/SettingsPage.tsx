@@ -10,7 +10,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={t('admin.settings.title')} />
+      <PageHeader title={t('admin.settings.title')} sub={t('admin.settings.subtitle')} />
       <AsyncBoundary
         isLoading={query.isPending}
         isError={query.isError}
@@ -22,10 +22,8 @@ export function SettingsPage() {
         }}
       >
         {query.data !== undefined ? (
-          <div className="card" style={{ maxWidth: 560 }}>
-            <div className="card__body">
-              <SettingsForm settings={query.data} />
-            </div>
+          <div style={{ maxWidth: 680 }}>
+            <SettingsForm settings={query.data} />
           </div>
         ) : null}
       </AsyncBoundary>

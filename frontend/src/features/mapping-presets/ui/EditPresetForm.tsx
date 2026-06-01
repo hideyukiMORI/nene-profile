@@ -1,6 +1,6 @@
 import type { MappingPresetDetail } from '@/entities/mapping-preset'
 import { useTranslation } from '@/shared/i18n'
-import { Button, Stack, Text } from '@/shared/ui'
+import { Button } from '@/shared/ui'
 import { useEditPresetForm } from '../hooks/use-edit-preset-form'
 import { PresetFields } from './PresetFields'
 
@@ -14,7 +14,7 @@ interface EditPresetFormProps {
 export function EditPresetForm({ preset, onSaved, onCancel }: EditPresetFormProps) {
   const { t } = useTranslation()
   const { form, submit, isSubmitting, error } = useEditPresetForm(preset, onSaved)
-  const { register, handleSubmit, formState } = form
+  const { register, handleSubmit, formState, watch } = form
 
   return (
     <form
@@ -23,28 +23,27 @@ export function EditPresetForm({ preset, onSaved, onCancel }: EditPresetFormProp
       }}
       noValidate
     >
-      <Stack gap="lg">
-        <Text as="h2" variant="heading">
-          {t('admin.mappingPresets.edit.title')}
-        </Text>
-
-        <PresetFields register={register} errors={formState.errors} />
-
-        {error !== null ? (
-          <Text variant="caption" tone="danger">
-            {t('admin.mappingPresets.edit.error')}
-          </Text>
-        ) : null}
-
-        <div className="flex justify-end gap-inline-sm">
-          <Button variant="ghost" size="sm" disabled={isSubmitting} onClick={onCancel}>
-            {t('common.actions.cancel')}
-          </Button>
-          <Button type="submit" size="sm" disabled={isSubmitting} data-testid="preset-edit-submit">
-            {isSubmitting ? t('common.state.saving') : t('admin.mappingPresets.edit.submit')}
-          </Button>
-        </div>
-      </Stack>
+      <PresetFields
+        register={register}
+        errors={formState.errors}
+        watch={watch}
+        title={t('admin.mappingPresets.edit.title')}
+        footer={
+          <>
+            {error !== null ? (
+              <span className="field__error" role="alert" style={{ marginRight: 'auto' }}>
+                {t('admin.mappingPresets.edit.error')}
+              </span>
+            ) : null}
+            <Button variant="ghost" disabled={isSubmitting} onClick={onCancel}>
+              {t('common.actions.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting} data-testid="preset-edit-submit">
+              {isSubmitting ? t('common.state.saving') : t('admin.mappingPresets.edit.submit')}
+            </Button>
+          </>
+        }
+      />
     </form>
   )
 }

@@ -1,5 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, Field, Input, Select, Stack, Text, type SelectOption } from '@/shared/ui'
+import { Button, Field, Input, Select, type SelectOption } from '@/shared/ui'
 import type { User } from '@/entities/user'
 import { useEditUserForm } from '../hooks/use-edit-user-form'
 
@@ -33,53 +33,58 @@ export function EditUserForm({ user, onSaved, onCancel }: EditUserFormProps) {
       }}
       noValidate
     >
-      <Stack gap="lg">
-        <Text as="h2" variant="heading">
-          {t('admin.users.edit.title')}
-        </Text>
-        <Text variant="caption" tone="muted">
-          {user.email}
-        </Text>
+      <div className="card">
+        <div className="card__head">
+          <div>
+            <h2 className="card__title">{t('admin.users.edit.title')}</h2>
+            <div className="card__desc">{user.email}</div>
+          </div>
+        </div>
+        <div className="card__body">
+          <div className="form-grid">
+            <div className="field-row">
+              <Field label={t('admin.users.edit.role')}>
+                {({ id }) => <Select id={id} options={roleOptions} {...register('role')} />}
+              </Field>
+              <Field label={t('admin.users.edit.status')}>
+                {({ id }) => <Select id={id} options={statusOptions} {...register('status')} />}
+              </Field>
+            </div>
 
-        <Field label={t('admin.users.edit.role')}>
-          {({ id }) => <Select id={id} options={roleOptions} {...register('role')} />}
-        </Field>
+            <Field
+              label={t('admin.users.edit.password')}
+              hint={t('admin.users.edit.passwordHint')}
+              {...(formState.errors.password
+                ? { error: t('admin.users.edit.passwordInvalid') }
+                : {})}
+            >
+              {({ id, invalid }) => (
+                <Input
+                  id={id}
+                  type="password"
+                  autoComplete="new-password"
+                  invalid={invalid}
+                  {...register('password')}
+                />
+              )}
+            </Field>
 
-        <Field label={t('admin.users.edit.status')}>
-          {({ id }) => <Select id={id} options={statusOptions} {...register('status')} />}
-        </Field>
-
-        <Field
-          label={t('admin.users.edit.password')}
-          {...(formState.errors.password ? { error: t('admin.users.edit.passwordInvalid') } : {})}
-        >
-          {({ id, invalid }) => (
-            <Input
-              id={id}
-              type="password"
-              autoComplete="new-password"
-              placeholder={t('admin.users.edit.passwordHint')}
-              invalid={invalid}
-              {...register('password')}
-            />
-          )}
-        </Field>
-
-        {error !== null ? (
-          <Text variant="caption" tone="danger">
-            {t('admin.users.edit.error')}
-          </Text>
-        ) : null}
-
-        <div className="flex justify-end gap-inline-sm">
-          <Button variant="ghost" size="sm" disabled={isSubmitting} onClick={onCancel}>
+            {error !== null ? (
+              <span className="field__error" role="alert">
+                {t('admin.users.edit.error')}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <div className="card__foot">
+          <Button variant="ghost" disabled={isSubmitting} onClick={onCancel}>
             {t('common.actions.cancel')}
           </Button>
-          <Button type="submit" size="sm" disabled={isSubmitting} data-testid="user-edit-submit">
+          <Button type="submit" disabled={isSubmitting} data-testid="user-edit-submit">
             {isSubmitting ? t('common.state.saving') : t('admin.users.edit.submit')}
           </Button>
         </div>
-      </Stack>
+      </div>
     </form>
   )
 }

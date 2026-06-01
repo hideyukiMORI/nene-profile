@@ -30,7 +30,18 @@ export function MappingPresetsPage() {
     {
       id: 'name',
       header: t('admin.mappingPresets.col.name'),
-      render: (p) => <span className="primary-cell">{p.name}</span>,
+      render: (p) => (
+        <span className="row">
+          <span
+            className="stat__ic ic-tint-blue"
+            aria-hidden="true"
+            style={{ width: 28, height: 28, borderRadius: 7 }}
+          >
+            <Icon name="sliders" />
+          </span>
+          <span className="primary-cell">{p.name}</span>
+        </span>
+      ),
     },
     {
       id: 'bankLabel',
@@ -85,46 +96,42 @@ export function MappingPresetsPage() {
       />
 
       {editingId !== null ? (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card__body">
-            <AsyncBoundary
-              isLoading={editQuery.isPending}
-              isError={editQuery.isError}
-              loadingLabel={t('common.state.loading')}
-              errorLabel={t('admin.mappingPresets.error')}
-              retryLabel={t('common.actions.retry')}
-              onRetry={() => {
-                void editQuery.refetch()
-              }}
-            >
-              {editQuery.data !== undefined ? (
-                <EditPresetForm
-                  preset={editQuery.data}
-                  onSaved={() => {
-                    setEditingId(null)
-                  }}
-                  onCancel={() => {
-                    setEditingId(null)
-                  }}
-                />
-              ) : null}
-            </AsyncBoundary>
-          </div>
+        <div style={{ maxWidth: 860, marginBottom: 20 }}>
+          <AsyncBoundary
+            isLoading={editQuery.isPending}
+            isError={editQuery.isError}
+            loadingLabel={t('common.state.loading')}
+            errorLabel={t('admin.mappingPresets.error')}
+            retryLabel={t('common.actions.retry')}
+            onRetry={() => {
+              void editQuery.refetch()
+            }}
+          >
+            {editQuery.data !== undefined ? (
+              <EditPresetForm
+                preset={editQuery.data}
+                onSaved={() => {
+                  setEditingId(null)
+                }}
+                onCancel={() => {
+                  setEditingId(null)
+                }}
+              />
+            ) : null}
+          </AsyncBoundary>
         </div>
       ) : null}
 
       {creating ? (
-        <div className="card" style={{ marginBottom: 20 }}>
-          <div className="card__body">
-            <CreatePresetForm
-              onCreated={() => {
-                setCreating(false)
-              }}
-              onCancel={() => {
-                setCreating(false)
-              }}
-            />
-          </div>
+        <div style={{ maxWidth: 860, marginBottom: 20 }}>
+          <CreatePresetForm
+            onCreated={() => {
+              setCreating(false)
+            }}
+            onCancel={() => {
+              setCreating(false)
+            }}
+          />
         </div>
       ) : null}
 
