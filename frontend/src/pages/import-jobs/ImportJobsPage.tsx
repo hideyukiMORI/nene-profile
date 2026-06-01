@@ -43,45 +43,49 @@ export function ImportJobsPage() {
   const total = query.data?.total ?? 0
   const rows = query.data?.items ?? []
 
+  const statusLabel = (j: ImportJob): string =>
+    j.status === 'completed_with_errors'
+      ? t('admin.importJobs.status.errorBadge', { count: j.errorCount })
+      : t(statusLabelKey[j.status])
+
   const columns: readonly Column<ImportJob>[] = [
     {
       id: 'filename',
-      header: t('admin.importJobs.col.filename'),
+      header: t('admin.importJobs.col.fileMeta'),
       render: (j) => (
         <span className="row">
           <span style={{ color: 'var(--ink-3)', flex: '0 0 auto', display: 'inline-grid' }}>
             <Icon name="file" />
           </span>
-          <span className="primary-cell mono">{j.originalFilename}</span>
+          <span style={{ minWidth: 0 }}>
+            <span className="primary-cell mono">{j.originalFilename}</span>
+            <span
+              className="muted"
+              style={{
+                display: 'block',
+                fontSize: 11,
+                fontWeight: 500,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {`${t('admin.importJobs.presetRef', { id: j.presetVersionId })} ・ ${j.createdAt}`}
+            </span>
+          </span>
         </span>
       ),
     },
     {
-      id: 'preset',
-      header: t('admin.importJobs.col.preset'),
-      render: (j) => <span className="tag">{`#${String(j.presetVersionId)}`}</span>,
-    },
-    {
       id: 'status',
       header: t('admin.importJobs.col.status'),
-      render: (j) => <JobStatusBadge status={j.status} label={t(statusLabelKey[j.status])} />,
+      render: (j) => <JobStatusBadge status={j.status} label={statusLabel(j)} />,
     },
     {
       id: 'rowCount',
       header: t('admin.importJobs.col.rowCount'),
       align: 'end',
       render: (j) => <span className="tnum">{j.rowCount}</span>,
-    },
-    {
-      id: 'errorCount',
-      header: t('admin.importJobs.col.errorCount'),
-      align: 'end',
-      render: (j) => <span className="tnum">{j.errorCount}</span>,
-    },
-    {
-      id: 'createdAt',
-      header: t('admin.importJobs.col.createdAt'),
-      render: (j) => <span className="muted">{j.createdAt}</span>,
     },
     {
       id: 'actions',
@@ -112,6 +116,7 @@ export function ImportJobsPage() {
     <>
       <PageHeader
         title={t('admin.importJobs.title')}
+        sub={t('admin.importJobs.subtitle')}
         actions={
           !creating ? (
             <Button

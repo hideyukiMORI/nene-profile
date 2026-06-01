@@ -47,7 +47,16 @@ export function HomePage() {
     {
       id: 'status',
       header: t('admin.importJobs.col.status'),
-      render: (j) => <JobStatusBadge status={j.status} label={t(statusLabelKey[j.status])} />,
+      render: (j) => (
+        <JobStatusBadge
+          status={j.status}
+          label={
+            j.status === 'completed_with_errors'
+              ? t('admin.importJobs.status.errorBadge', { count: j.errorCount })
+              : t(statusLabelKey[j.status])
+          }
+        />
+      ),
     },
     {
       id: 'rowCount',

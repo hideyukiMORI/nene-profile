@@ -47,8 +47,9 @@ test.beforeEach(async ({ page }) => {
 test('renders jobs with localized status and counts', async ({ page }) => {
   await openJobs(page, [job(7, 'bank.csv', 'completed_with_errors', 10, 2)])
 
-  await expect(page.getByRole('cell', { name: 'bank.csv', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'エラーあり完了', exact: true })).toBeVisible()
+  await expect(page.getByText('bank.csv', { exact: true })).toBeVisible()
+  // completed_with_errors renders an "エラー {count}" badge in the design.
+  await expect(page.getByText('エラー 2', { exact: true })).toBeVisible()
 })
 
 test('shows the empty state', async ({ page }) => {
@@ -107,13 +108,13 @@ test('errors: expands the rejected rows for a job', async ({ page }) => {
 test('export: buttons appear for completed jobs', async ({ page }) => {
   await openJobs(page, [job(7, 'bank.csv', 'completed')])
 
-  await expect(page.getByRole('button', { name: 'JSON でエクスポート' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'CSV でエクスポート' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'JSON', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'CSV', exact: true })).toBeVisible()
 })
 
 test('export: buttons are hidden for pending jobs', async ({ page }) => {
   await openJobs(page, [job(8, 'queued.csv', 'pending')])
 
-  await expect(page.getByRole('cell', { name: '待機中', exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'JSON でエクスポート' })).toHaveCount(0)
+  await expect(page.getByText('待機中', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'JSON', exact: true })).toHaveCount(0)
 })
