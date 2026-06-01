@@ -263,6 +263,7 @@ export const enMessages: MessageCatalog = {
 
   // ── Audit logs ────────────────────────────────────────────────────────────
   'admin.auditLogs.title': 'Audit logs',
+  'admin.auditLogs.subtitle': 'A record of actions taken in your organization.',
   'admin.auditLogs.empty': 'No audit logs yet.',
   'admin.auditLogs.error': 'Could not load audit logs.',
   'admin.auditLogs.col.createdAt': 'Timestamp',
