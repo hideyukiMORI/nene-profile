@@ -7,19 +7,21 @@
  * never appear outside this layer (frontend-standards.md).
  */
 @theme {
-  /* Color */
+  /* Color — aligned with the ClaudeDesign navy/clean design system
+     (design-system.css). Kept in sync so any remaining Tailwind-utility
+     usage matches the BEM component layer. */
   --color-surface: #ffffff;
-  --color-surface-raised: #f7f8fa;
-  --color-surface-overlay: #eef0f3;
-  --color-text-primary: #1a1d21;
-  --color-text-muted: #5b6470;
+  --color-surface-raised: #f7f9fc;
+  --color-surface-overlay: #f1f4f8;
+  --color-text-primary: #142031;
+  --color-text-muted: #51627a;
   --color-text-inverse: #ffffff;
-  --color-border: #d7dbe0;
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
-  --color-danger: #dc2626;
-  --color-danger-hover: #b91c1c;
-  --color-positive: #16a34a;
+  --color-border: #e3e8ef;
+  --color-accent: #3a5a8c;
+  --color-accent-hover: #2f496f;
+  --color-danger: #a8534b;
+  --color-danger-hover: #8f433c;
+  --color-positive: #3d7355;
 
   /* Spacing (inline = horizontal rhythm, stack = vertical rhythm) */
   --spacing-inline-sm: 0.5rem;

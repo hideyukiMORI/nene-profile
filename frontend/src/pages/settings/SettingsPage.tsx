@@ -1,7 +1,7 @@
 import { useOrganizationSettings } from '@/entities/organization-settings'
 import { SettingsForm } from '@/features/organization-settings'
 import { useTranslation } from '@/shared/i18n'
-import { AsyncBoundary, Stack, Text } from '@/shared/ui'
+import { AsyncBoundary, PageHeader } from '@/shared/ui'
 
 /** Organization settings screen (singleton): load then edit. */
 export function SettingsPage() {
@@ -9,10 +9,8 @@ export function SettingsPage() {
   const query = useOrganizationSettings()
 
   return (
-    <Stack gap="lg">
-      <Text as="h1" variant="display">
-        {t('admin.settings.title')}
-      </Text>
+    <>
+      <PageHeader title={t('admin.settings.title')} />
       <AsyncBoundary
         isLoading={query.isPending}
         isError={query.isError}
@@ -24,11 +22,13 @@ export function SettingsPage() {
         }}
       >
         {query.data !== undefined ? (
-          <div className="max-w-md rounded-md border border-border bg-surface p-inline-lg">
-            <SettingsForm settings={query.data} />
+          <div className="card" style={{ maxWidth: 560 }}>
+            <div className="card__body">
+              <SettingsForm settings={query.data} />
+            </div>
           </div>
         ) : null}
       </AsyncBoundary>
-    </Stack>
+    </>
   )
 }

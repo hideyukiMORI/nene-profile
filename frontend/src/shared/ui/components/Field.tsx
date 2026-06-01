@@ -1,31 +1,34 @@
 import { useId, type ReactNode } from 'react'
-import { Stack } from '@/shared/ui/primitives/Stack'
-import { Text } from '@/shared/ui/primitives/Text'
 
 export interface FieldProps {
   label: string
+  /** Optional muted hint shown under the control. */
+  hint?: string
   error?: string
   /** Render-prop receiving the id to wire to the control (aria correctness). */
   children: (props: { id: string; invalid: boolean }) => ReactNode
 }
 
-/** Labelled form field with accessible error wiring (aria-describedby). */
-export function Field({ label, error, children }: FieldProps) {
+/** Labelled form field (design-system `.field`) with accessible error wiring. */
+export function Field({ label, hint, error, children }: FieldProps) {
   const id = useId()
   const errorId = `${id}-error`
   const invalid = error !== undefined && error !== ''
 
   return (
-    <Stack gap="xs">
-      <Text as="label" variant="caption" tone="muted" htmlFor={id}>
+    <div className="field">
+      <label className="field__label" htmlFor={id}>
         {label}
-      </Text>
+      </label>
       {children({ id, invalid })}
+      {hint !== undefined && hint !== '' && !invalid ? (
+        <span className="field__hint">{hint}</span>
+      ) : null}
       {invalid ? (
-        <span id={errorId} role="alert" className="text-caption text-danger">
+        <span id={errorId} role="alert" className="field__error">
           {error}
         </span>
       ) : null}
-    </Stack>
+    </div>
   )
 }

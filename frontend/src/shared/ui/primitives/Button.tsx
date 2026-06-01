@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
-export type ButtonSize = 'sm' | 'md'
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'link' | 'link-danger'
+export type ButtonSize = 'sm' | 'md' | 'lg'
 
 export interface ButtonProps {
   variant?: ButtonVariant
   size?: ButtonSize
+  block?: boolean
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
   children: ReactNode
@@ -14,33 +15,39 @@ export interface ButtonProps {
   'data-testid'?: string
 }
 
-const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-text-inverse hover:bg-accent-hover border-transparent',
-  secondary: 'bg-surface-raised text-text-primary hover:bg-surface-overlay border-border',
-  danger: 'bg-danger text-text-inverse hover:bg-danger-hover border-transparent',
-  ghost: 'bg-transparent text-text-muted hover:text-text-primary border-transparent',
+const btnVariant: Record<Exclude<ButtonVariant, 'link' | 'link-danger'>, string> = {
+  primary: 'btn--primary',
+  secondary: 'btn--secondary',
+  danger: 'btn--danger',
+  ghost: 'btn--ghost',
 }
 
-const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-inline-sm py-stack-xs text-caption',
-  md: 'px-inline-md py-stack-sm text-body',
+const btnSize: Record<ButtonSize, string> = {
+  sm: 'btn--sm',
+  md: '',
+  lg: 'btn--lg',
 }
 
+/**
+ * Button primitive bound to the design-system classes (.btn / .linkbtn).
+ * `link` / `link-danger` render an inline text-action button used in table rows.
+ */
 export function Button({
   variant = 'primary',
   size = 'md',
+  block = false,
   disabled = false,
   type = 'button',
   children,
   onClick,
   'data-testid': dataTestId,
 }: ButtonProps) {
-  const classes = [
-    'inline-flex items-center justify-center rounded-sm border font-semibold transition-colors',
-    'focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50',
-    variantClasses[variant],
-    sizeClasses[size],
-  ].join(' ')
+  const isLink = variant === 'link' || variant === 'link-danger'
+  const classes = isLink
+    ? `linkbtn${variant === 'link-danger' ? ' linkbtn--danger' : ''}`
+    : ['btn', btnVariant[variant], btnSize[size], block ? 'btn--block' : '']
+        .filter(Boolean)
+        .join(' ')
 
   return (
     <button

@@ -1,5 +1,4 @@
 import { Button } from '@/shared/ui/primitives/Button'
-import { Text } from '@/shared/ui/primitives/Text'
 
 export interface PaginationProps {
   /** Pre-rendered summary, e.g. "Showing 1–20 of 57" (interpolated by caller). */
@@ -12,7 +11,10 @@ export interface PaginationProps {
   onNext: () => void
 }
 
-/** Presentational prev/next pager with a summary line. Offset math is the caller's. */
+/**
+ * Presentational prev/next pager (design-system `.pager`). Rendered as the
+ * footer of a DataTable card. Offset math is the caller's.
+ */
 export function Pagination({
   summary,
   prevLabel,
@@ -23,11 +25,9 @@ export function Pagination({
   onNext,
 }: PaginationProps) {
   return (
-    <div className="flex items-center justify-between">
-      <Text variant="caption" tone="muted">
-        {summary}
-      </Text>
-      <div className="flex gap-inline-sm">
+    <div className="pager">
+      <div className="count">{summary}</div>
+      <div className="nav">
         <Button variant="secondary" size="sm" disabled={!canPrev} onClick={onPrev}>
           {prevLabel}
         </Button>

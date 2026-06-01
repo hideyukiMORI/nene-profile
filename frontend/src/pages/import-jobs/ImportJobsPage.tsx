@@ -1,8 +1,21 @@
 import { useState } from 'react'
 import { useImportJobs, type ImportJob, type ImportJobStatus } from '@/entities/import-job'
-import { ExportJobActions, JobErrorsView, UploadJobForm } from '@/features/import-jobs'
+import {
+  ExportJobActions,
+  JobErrorsView,
+  JobStatusBadge,
+  UploadJobForm,
+} from '@/features/import-jobs'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
-import { AsyncBoundary, Button, DataTable, Pagination, Stack, Text, type Column } from '@/shared/ui'
+import {
+  AsyncBoundary,
+  Button,
+  DataTable,
+  Icon,
+  PageHeader,
+  Pagination,
+  type Column,
+} from '@/shared/ui'
 
 const PAGE_SIZE = 20
 
@@ -34,41 +47,51 @@ export function ImportJobsPage() {
     {
       id: 'filename',
       header: t('admin.importJobs.col.filename'),
-      render: (j) => j.originalFilename,
+      render: (j) => (
+        <span className="row">
+          <span style={{ color: 'var(--ink-3)', flex: '0 0 auto', display: 'inline-grid' }}>
+            <Icon name="file" />
+          </span>
+          <span className="primary-cell mono">{j.originalFilename}</span>
+        </span>
+      ),
     },
     {
       id: 'preset',
       header: t('admin.importJobs.col.preset'),
-      render: (j) => `#${String(j.presetVersionId)}`,
+      render: (j) => <span className="tag">{`#${String(j.presetVersionId)}`}</span>,
     },
     {
       id: 'status',
       header: t('admin.importJobs.col.status'),
-      render: (j) => t(statusLabelKey[j.status]),
+      render: (j) => <JobStatusBadge status={j.status} label={t(statusLabelKey[j.status])} />,
     },
     {
       id: 'rowCount',
       header: t('admin.importJobs.col.rowCount'),
       align: 'end',
-      render: (j) => j.rowCount,
+      render: (j) => <span className="tnum">{j.rowCount}</span>,
     },
     {
       id: 'errorCount',
       header: t('admin.importJobs.col.errorCount'),
       align: 'end',
-      render: (j) => j.errorCount,
+      render: (j) => <span className="tnum">{j.errorCount}</span>,
     },
-    { id: 'createdAt', header: t('admin.importJobs.col.createdAt'), render: (j) => j.createdAt },
+    {
+      id: 'createdAt',
+      header: t('admin.importJobs.col.createdAt'),
+      render: (j) => <span className="muted">{j.createdAt}</span>,
+    },
     {
       id: 'actions',
       header: t('admin.importJobs.col.actions'),
       align: 'end',
       render: (j) => (
-        <span className="inline-flex items-center gap-inline-sm">
+        <>
           {j.errorCount > 0 ? (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="link"
               onClick={() => {
                 setExpandedId((current) => (current === j.id ? null : j.id))
               }}
@@ -77,7 +100,7 @@ export function ImportJobsPage() {
             </Button>
           ) : null}
           {EXPORTABLE.has(j.status) ? <ExportJobActions jobId={j.id} /> : null}
-        </span>
+        </>
       ),
     },
   ]
@@ -86,33 +109,35 @@ export function ImportJobsPage() {
   const to = Math.min(offset + PAGE_SIZE, total)
 
   return (
-    <Stack gap="lg">
-      <div className="flex items-center justify-between">
-        <Text as="h1" variant="display">
-          {t('admin.importJobs.title')}
-        </Text>
-        {!creating ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              setCreating(true)
-            }}
-          >
-            {t('admin.importJobs.newButton')}
-          </Button>
-        ) : null}
-      </div>
+    <>
+      <PageHeader
+        title={t('admin.importJobs.title')}
+        actions={
+          !creating ? (
+            <Button
+              onClick={() => {
+                setCreating(true)
+              }}
+            >
+              <Icon name="upload" />
+              {t('admin.importJobs.newButton')}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {creating ? (
-        <div className="rounded-md border border-border bg-surface p-inline-lg">
-          <UploadJobForm
-            onUploaded={() => {
-              setCreating(false)
-            }}
-            onCancel={() => {
-              setCreating(false)
-            }}
-          />
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card__body">
+            <UploadJobForm
+              onUploaded={() => {
+                setCreating(false)
+              }}
+              onCancel={() => {
+                setCreating(false)
+              }}
+            />
+          </div>
         </div>
       ) : null}
 
@@ -126,35 +151,37 @@ export function ImportJobsPage() {
           void query.refetch()
         }}
       >
-        <Stack gap="md">
-          <DataTable
-            columns={columns}
-            rows={rows}
-            rowKey={(j) => j.id}
-            emptyLabel={t('admin.importJobs.empty')}
-          />
-          {expandedId !== null ? (
-            <div className="rounded-md border border-border bg-surface p-inline-lg">
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(j) => j.id}
+          emptyLabel={t('admin.importJobs.empty')}
+          footer={
+            total > 0 ? (
+              <Pagination
+                summary={t('common.pagination.summary', { from, to, total })}
+                prevLabel={t('common.pagination.prev')}
+                nextLabel={t('common.pagination.next')}
+                canPrev={offset > 0}
+                canNext={offset + PAGE_SIZE < total}
+                onPrev={() => {
+                  setOffset((current) => Math.max(0, current - PAGE_SIZE))
+                }}
+                onNext={() => {
+                  setOffset((current) => current + PAGE_SIZE)
+                }}
+              />
+            ) : undefined
+          }
+        />
+        {expandedId !== null ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="card__body">
               <JobErrorsView jobId={expandedId} />
             </div>
-          ) : null}
-          {total > 0 ? (
-            <Pagination
-              summary={t('common.pagination.summary', { from, to, total })}
-              prevLabel={t('common.pagination.prev')}
-              nextLabel={t('common.pagination.next')}
-              canPrev={offset > 0}
-              canNext={offset + PAGE_SIZE < total}
-              onPrev={() => {
-                setOffset((current) => Math.max(0, current - PAGE_SIZE))
-              }}
-              onNext={() => {
-                setOffset((current) => current + PAGE_SIZE)
-              }}
-            />
-          ) : null}
-        </Stack>
+          </div>
+        ) : null}
       </AsyncBoundary>
-    </Stack>
+    </>
   )
 }

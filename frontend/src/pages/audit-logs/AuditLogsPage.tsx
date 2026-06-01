@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuditLogs, type AuditLog } from '@/entities/audit-log'
 import { AuditLogChanges } from '@/features/audit-logs'
 import { useTranslation } from '@/shared/i18n'
-import { AsyncBoundary, DataTable, Pagination, Stack, Text, type Column } from '@/shared/ui'
+import { AsyncBoundary, DataTable, PageHeader, Pagination, type Column } from '@/shared/ui'
 
 const PAGE_SIZE = 20
 
@@ -16,14 +16,22 @@ export function AuditLogsPage() {
   const rows = query.data?.items ?? []
 
   const columns: readonly Column<AuditLog>[] = [
-    { id: 'createdAt', header: t('admin.auditLogs.col.createdAt'), render: (l) => l.createdAt },
+    {
+      id: 'createdAt',
+      header: t('admin.auditLogs.col.createdAt'),
+      render: (l) => <span className="muted">{l.createdAt}</span>,
+    },
     {
       id: 'actor',
       header: t('admin.auditLogs.col.actor'),
       render: (l) =>
         l.actorUserId !== null ? `#${String(l.actorUserId)}` : t('admin.auditLogs.actor.system'),
     },
-    { id: 'action', header: t('admin.auditLogs.col.action'), render: (l) => l.action },
+    {
+      id: 'action',
+      header: t('admin.auditLogs.col.action'),
+      render: (l) => <span className="tag">{l.action}</span>,
+    },
     {
       id: 'entity',
       header: t('admin.auditLogs.col.entity'),
@@ -41,10 +49,8 @@ export function AuditLogsPage() {
   const to = Math.min(offset + PAGE_SIZE, total)
 
   return (
-    <Stack gap="lg">
-      <Text as="h1" variant="display">
-        {t('admin.auditLogs.title')}
-      </Text>
+    <>
+      <PageHeader title={t('admin.auditLogs.title')} />
       <AsyncBoundary
         isLoading={query.isPending}
         isError={query.isError}
@@ -55,30 +61,30 @@ export function AuditLogsPage() {
           void query.refetch()
         }}
       >
-        <Stack gap="md">
-          <DataTable
-            columns={columns}
-            rows={rows}
-            rowKey={(l) => l.id}
-            emptyLabel={t('admin.auditLogs.empty')}
-          />
-          {total > 0 ? (
-            <Pagination
-              summary={t('common.pagination.summary', { from, to, total })}
-              prevLabel={t('common.pagination.prev')}
-              nextLabel={t('common.pagination.next')}
-              canPrev={offset > 0}
-              canNext={offset + PAGE_SIZE < total}
-              onPrev={() => {
-                setOffset((current) => Math.max(0, current - PAGE_SIZE))
-              }}
-              onNext={() => {
-                setOffset((current) => current + PAGE_SIZE)
-              }}
-            />
-          ) : null}
-        </Stack>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={(l) => l.id}
+          emptyLabel={t('admin.auditLogs.empty')}
+          footer={
+            total > 0 ? (
+              <Pagination
+                summary={t('common.pagination.summary', { from, to, total })}
+                prevLabel={t('common.pagination.prev')}
+                nextLabel={t('common.pagination.next')}
+                canPrev={offset > 0}
+                canNext={offset + PAGE_SIZE < total}
+                onPrev={() => {
+                  setOffset((current) => Math.max(0, current - PAGE_SIZE))
+                }}
+                onNext={() => {
+                  setOffset((current) => current + PAGE_SIZE)
+                }}
+              />
+            ) : undefined
+          }
+        />
       </AsyncBoundary>
-    </Stack>
+    </>
   )
 }

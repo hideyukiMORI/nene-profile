@@ -12,7 +12,7 @@ export function LocaleSwitcher() {
   const { locale, setLocale, t } = useTranslation()
 
   return (
-    <div role="group" aria-label={t('common.locale.label')}>
+    <div className="seg" role="group" aria-label={t('common.locale.label')}>
       {LOCALES.map((meta) => {
         const active = meta.id === locale
         return (

@@ -32,8 +32,7 @@ export function DeleteOrganizationAction({ organization }: DeleteOrganizationAct
   return (
     <>
       <Button
-        variant="ghost"
-        size="sm"
+        variant="link-danger"
         onClick={() => {
           setOpen(true)
         }}

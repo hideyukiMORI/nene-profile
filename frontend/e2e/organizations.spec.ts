@@ -35,8 +35,8 @@ test.beforeEach(async ({ page }) => {
 test('renders organizations with localized status', async ({ page }) => {
   await open(page, { items: [org(1, 'Acme', 'acme', true), org(2, 'Beta', 'beta', false)] })
 
-  await expect(page.getByRole('cell', { name: 'Acme', exact: true })).toBeVisible()
-  await expect(page.getByRole('cell', { name: 'beta', exact: true })).toBeVisible()
+  await expect(page.getByText('Acme', { exact: true })).toBeVisible()
+  await expect(page.getByText('beta', { exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: '有効', exact: true })).toBeVisible()
   await expect(page.getByRole('cell', { name: '無効', exact: true })).toBeVisible()
 })
@@ -116,7 +116,7 @@ test('delete: confirm removes the row', async ({ page }) => {
   await expect(page.getByRole('dialog')).toContainText('「Acme」を削除します')
   await page.getByTestId('confirm-dialog-confirm').click()
 
-  await expect(page.getByRole('cell', { name: 'Acme', exact: true })).toHaveCount(0)
+  await expect(page.getByText('Acme', { exact: true })).toHaveCount(0)
 })
 
 test('delete: cancel keeps the row', async ({ page }) => {
@@ -127,7 +127,7 @@ test('delete: cancel keeps the row', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: 'キャンセル' }).click()
 
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(page.getByRole('cell', { name: 'Acme', exact: true })).toBeVisible()
+  await expect(page.getByText('Acme', { exact: true })).toBeVisible()
 })
 
 test('delete: shows an in-dialog error on failure', async ({ page }) => {
@@ -159,7 +159,7 @@ test('edit: opens form, updates name, and row reflects change', async ({ page })
   await page.getByTestId('org-name').fill('Acme Updated')
   await page.getByTestId('org-edit-submit').click()
 
-  await expect(page.getByRole('cell', { name: 'Acme Updated', exact: true })).toBeVisible()
+  await expect(page.getByText('Acme Updated', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '組織を作成' })).toBeVisible()
 })
 
@@ -170,6 +170,6 @@ test('edit: cancel closes form without saving', async ({ page }) => {
   await page.getByTestId('org-name').fill('Changed But Cancelled')
   await page.getByRole('button', { name: 'キャンセル', exact: true }).click()
 
-  await expect(page.getByRole('cell', { name: 'Acme', exact: true })).toBeVisible()
+  await expect(page.getByText('Acme', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '組織を作成' })).toBeVisible()
 })
