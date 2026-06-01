@@ -1,0 +1,32 @@
+RewriteEngine On
+RewriteBase /admin/
+
+# ── API ルーティング ──────────────────────────────────────────────────────────
+# 管理 SPA のクライアントルート（/admin/organizations 等）と API パスは同名で衝突する。
+# そのためパスだけでは判別できず、リクエスト特性で API を判定する。判定外（ブラウザの
+# 直接ナビ・ディープリンク = GET / Bearer なし / HTML 期待）は SPA fallback へ流す。
+# 参照: nene-corpus public_html/admin/.htaccess の同型解。
+
+# 1. 常に API: auth サブパス（/admin/auth/login, /admin/auth/me/password）。SPA に同名ページ無し。
+RewriteRule ^(auth/.*) ../index.php [QSA,L]
+
+# 2. 非 GET メソッド（POST/PUT/PATCH/DELETE）は常に API 呼び出し。
+RewriteCond %{REQUEST_METHOD} !^GET$
+RewriteRule ^(organizations|users|mapping-presets|import-jobs|organization-settings|audit-logs)(/|$) ../index.php [QSA,L]
+
+# 3. Authorization: Bearer ヘッダー、または Accept: application/json → API。
+#    SPA のデータ取得・エクスポートDLは常に認証付き fetch のためここで捕捉される。
+RewriteCond %{HTTP:Authorization} ^Bearer [OR]
+RewriteCond %{HTTP_ACCEPT} application/json
+RewriteRule ^(organizations|users|mapping-presets|import-jobs|organization-settings|audit-logs)(/|$) ../index.php [QSA,L]
+
+# ── 静的ファイル ──────────────────────────────────────────────────────────────
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ── SPA fallback ──────────────────────────────────────────────────────────────
+# 上記いずれにも該当しない（= ブラウザの直接ナビ／ディープリンク）は index.html。
+# 静的アセット拡張子は除外（ハッシュ名ミスマッチ時に index.html を返さないため）。
+RewriteCond %{REQUEST_URI} !^.*\.(?:js|css|map|png|jpg|jpeg|svg|ico|woff2?|ttf|json|xml|txt)$
+RewriteRule . index.html [QSA,L]

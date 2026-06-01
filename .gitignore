@@ -11,7 +11,6 @@
 /composer.lock
 /public_html/assets/
 /public_html/admin/*
-!/public_html/admin/.htaccess
 /storage/
 /build/
 /frontend/node_modules/
