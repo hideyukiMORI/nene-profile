@@ -95,7 +95,6 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                 static fn (ContainerInterface $c): CreateImportJobHandler => new CreateImportJobHandler(
                     self::get($c, CreateImportJobUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -103,7 +102,6 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                 static fn (ContainerInterface $c): ListImportJobsHandler => new ListImportJobsHandler(
                     self::get($c, ListImportJobsUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -111,7 +109,6 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                 static fn (ContainerInterface $c): GetImportJobHandler => new GetImportJobHandler(
                     self::get($c, GetImportJobUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -119,7 +116,6 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                 static fn (ContainerInterface $c): ListImportJobErrorsHandler => new ListImportJobErrorsHandler(
                     self::get($c, ListImportJobErrorsUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -127,7 +123,6 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                 static fn (ContainerInterface $c): ExportImportJobJsonHandler => new ExportImportJobJsonHandler(
                     self::get($c, ExportImportJobUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -136,7 +131,6 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                     self::get($c, ExportImportJobUseCaseInterface::class),
                     self::get($c, ResponseFactoryInterface::class),
                     self::get($c, StreamFactoryInterface::class),
-                    self::problemDetails($c),
                 ),
             )
             ->set(

@@ -204,6 +204,18 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                 },
             )
             ->set(
+                OrganizationNotResolvedExceptionHandler::class,
+                static function (ContainerInterface $c): OrganizationNotResolvedExceptionHandler {
+                    $pd = $c->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$pd instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('Problem details response factory service is invalid.');
+                    }
+
+                    return new OrganizationNotResolvedExceptionHandler($pd);
+                },
+            )
+            ->set(
                 OrganizationSlugConflictExceptionHandler::class,
                 static function (ContainerInterface $c): OrganizationSlugConflictExceptionHandler {
                     $pd = $c->get(ProblemDetailsResponseFactory::class);

@@ -84,7 +84,6 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 static fn (ContainerInterface $c): ListMappingPresetsHandler => new ListMappingPresetsHandler(
                     self::get($c, ListMappingPresetsUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -92,7 +91,6 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 static fn (ContainerInterface $c): GetMappingPresetByIdHandler => new GetMappingPresetByIdHandler(
                     self::get($c, GetMappingPresetByIdUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -100,7 +98,6 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 static fn (ContainerInterface $c): CreateMappingPresetHandler => new CreateMappingPresetHandler(
                     self::get($c, CreateMappingPresetUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -108,7 +105,6 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 static fn (ContainerInterface $c): UpdateMappingPresetHandler => new UpdateMappingPresetHandler(
                     self::get($c, UpdateMappingPresetUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -116,7 +112,6 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 static fn (ContainerInterface $c): DeleteMappingPresetHandler => new DeleteMappingPresetHandler(
                     self::get($c, DeleteMappingPresetUseCaseInterface::class),
                     self::get($c, ResponseFactoryInterface::class),
-                    self::problemDetails($c),
                 ),
             )
             ->set(

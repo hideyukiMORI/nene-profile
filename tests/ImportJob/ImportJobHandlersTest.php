@@ -24,6 +24,7 @@ use NeneProfile\ImportJob\ListImportJobsHandler;
 use NeneProfile\ImportJob\ListImportJobsUseCase;
 use NeneProfile\ImportJob\NormalizationRunner;
 use NeneProfile\ImportJob\NormalizedTransaction;
+use NeneProfile\Organization\OrganizationNotResolvedException;
 use NeneProfile\OrgSettings\OrganizationSettings;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
 use NeneProfile\Preset\MappingDefinitionFactory;
@@ -107,7 +108,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new GetImportJobHandler(
             new GetImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}"))
@@ -126,10 +126,11 @@ final class ImportJobHandlersTest extends TestCase
 
     public function test_get_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new GetImportJobHandler(
             new GetImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -137,7 +138,6 @@ final class ImportJobHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_get_propagates_not_found(): void
@@ -147,7 +147,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new GetImportJobHandler(
             new GetImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', '/admin/import-jobs/999'))
@@ -166,7 +165,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobsHandler(
             new ListImportJobsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->withAuth($this->request('GET', '/admin/import-jobs')));
@@ -186,7 +184,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobsHandler(
             new ListImportJobsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', '/admin/import-jobs'))
@@ -212,7 +209,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobErrorsHandler(
             new ListImportJobErrorsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/errors"))
@@ -237,7 +233,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobErrorsHandler(
             new ListImportJobErrorsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/errors"))
@@ -271,7 +266,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ExportImportJobJsonHandler(
             new ExportImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/export.json"))
@@ -312,7 +306,6 @@ final class ImportJobHandlersTest extends TestCase
             new ExportImportJobUseCase($this->jobs),
             $this->psr17(),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/export.csv"))
@@ -330,11 +323,12 @@ final class ImportJobHandlersTest extends TestCase
 
     public function test_export_csv_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new ExportImportJobCsvHandler(
             new ExportImportJobUseCase($this->jobs),
             $this->psr17(),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -342,13 +336,14 @@ final class ImportJobHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     // ── CreateImportJobHandler ────────────────────────────────────────────
 
     public function test_create_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new CreateImportJobHandler(
             new CreateImportJobUseCase(
                 $this->jobs,
@@ -361,12 +356,10 @@ final class ImportJobHandlersTest extends TestCase
                 $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->request('POST', '/admin/import-jobs'));
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_create_throws_validation_when_file_missing(): void
@@ -385,7 +378,6 @@ final class ImportJobHandlersTest extends TestCase
                 $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('POST', '/admin/import-jobs'))
@@ -410,7 +402,6 @@ final class ImportJobHandlersTest extends TestCase
                 $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $psr17  = $this->psr17();
@@ -443,7 +434,6 @@ final class ImportJobHandlersTest extends TestCase
                 $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $psr17  = $this->psr17();

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace NeneProfile\ImportJob;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneProfile\Auth\AuthContext;
+use NeneProfile\Organization\Resolution\OrgScope;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
@@ -18,17 +18,12 @@ final readonly class CreateImportJobHandler
     public function __construct(
         private CreateImportJobUseCaseInterface $useCase,
         private JsonResponseFactory $response,
-        private ProblemDetailsResponseFactory $problemDetails,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $organizationId = AuthContext::resolvedOrganizationId($request);
-
-        if ($organizationId === null) {
-            return $this->problemDetails->create($request, 'org-not-resolved', 'Organization Required', 400, 'This action requires an organization context.');
-        }
+        $organizationId = OrgScope::requireId($request);
 
         $files = $request->getUploadedFiles();
         $file = $files['file'] ?? null;

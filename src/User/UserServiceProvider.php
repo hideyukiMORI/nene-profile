@@ -69,7 +69,6 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ListUsersHandler => new ListUsersHandler(
                     self::get($c, ListUsersUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -77,7 +76,6 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): GetUserByIdHandler => new GetUserByIdHandler(
                     self::get($c, GetUserByIdUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -85,7 +83,6 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): CreateUserHandler => new CreateUserHandler(
                     self::get($c, CreateUserUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -93,7 +90,6 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): UpdateUserHandler => new UpdateUserHandler(
                     self::get($c, UpdateUserUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -101,7 +97,6 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): DeleteUserHandler => new DeleteUserHandler(
                     self::get($c, DeleteUserUseCaseInterface::class),
                     self::responseFactory($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
