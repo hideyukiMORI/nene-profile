@@ -19,10 +19,8 @@ final readonly class UpdateMappingPresetUseCase implements UpdateMappingPresetUs
      * Metadata changes update the preset row; a supplied definition appends a
      * NEW version and points current_version_id at it. Existing versions are
      * never mutated (ADR 0004) — immutability is structural, not enforced by a flag.
-     *
-     * @return array{preset: MappingPreset, version: ?MappingPresetVersion}
      */
-    public function execute(?int $actorUserId, UpdateMappingPresetInput $input): array
+    public function execute(?int $actorUserId, UpdateMappingPresetInput $input): UpdateMappingPresetOutput
     {
         $existing = $this->presets->findByIdInOrganization($input->id, $input->organizationId);
 
@@ -64,6 +62,6 @@ final readonly class UpdateMappingPresetUseCase implements UpdateMappingPresetUs
             after: MappingPresetSnapshot::toArray($updated, $currentVersion),
         );
 
-        return ['preset' => $updated, 'version' => $currentVersion];
+        return new UpdateMappingPresetOutput(preset: $updated, version: $currentVersion);
     }
 }

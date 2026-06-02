@@ -53,7 +53,7 @@ final class CreateImportJobUseCaseTest extends TestCase
                 ],
             ]),
         ));
-        $this->presetId = $created['preset']->id;
+        $this->presetId = $created->preset->id;
 
         $this->useCase = new CreateImportJobUseCase(
             $this->jobs,

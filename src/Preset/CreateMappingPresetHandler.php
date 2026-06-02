@@ -67,7 +67,7 @@ final readonly class CreateMappingPresetHandler
         );
 
         return $this->response->create(
-            MappingPresetSnapshot::toArray($result['preset'], $result['version']),
+            MappingPresetSnapshot::toArray($result->preset, $result->version),
             201,
         );
     }

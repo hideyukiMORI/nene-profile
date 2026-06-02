@@ -34,6 +34,6 @@ final readonly class GetMappingPresetByIdHandler
 
         $result = $this->useCase->execute(new GetMappingPresetByIdInput($id, $organizationId));
 
-        return $this->response->create(MappingPresetSnapshot::toArray($result['preset'], $result['version']));
+        return $this->response->create(MappingPresetSnapshot::toArray($result->preset, $result->version));
     }
 }

@@ -71,7 +71,7 @@ final class ImportJobHandlersTest extends TestCase
             bankLabel: 'MUFG',
             definition: $def,
         ));
-        $this->presetVersionId = $result['version']->id;
+        $this->presetVersionId = $result->version->id;
     }
 
     private function savedJob(int $orgId = 1, string $status = ImportJob::STATUS_COMPLETED): int

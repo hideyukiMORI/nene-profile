@@ -58,9 +58,9 @@ final class MappingPresetCrudTest extends TestCase
             definition: $this->definition(),
         ));
 
-        $this->assertSame('MUFG', $result['preset']->name);
-        $this->assertSame(1, $result['version']->versionNumber);
-        $this->assertSame($result['version']->id, $result['preset']->currentVersionId);
+        $this->assertSame('MUFG', $result->preset->name);
+        $this->assertSame(1, $result->version->versionNumber);
+        $this->assertSame($result->version->id, $result->preset->currentVersionId);
         $this->assertSame(1, $this->versions->count());
 
         $log = $this->auditRepo->all()[0];
@@ -76,17 +76,17 @@ final class MappingPresetCrudTest extends TestCase
             bankLabel: 'MUFG',
             definition: $this->definition('date_ymd_slash'),
         ));
-        $v1Id = $created['version']->id;
+        $v1Id = $created->version->id;
 
         $update = new UpdateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
         $updated = $update->execute(1, new UpdateMappingPresetInput(
-            id: $created['preset']->id,
+            id: $created->preset->id,
             organizationId: 7,
             definition: $this->definition('date_ymd_dash'),
         ));
 
         // A new version (v2) was created; v1 still exists unchanged.
-        $this->assertSame(2, $updated['version']?->versionNumber);
+        $this->assertSame(2, $updated->version?->versionNumber);
         $this->assertSame(2, $this->versions->count());
 
         $v1 = $this->versions->findById($v1Id);
@@ -95,7 +95,7 @@ final class MappingPresetCrudTest extends TestCase
         $this->assertSame('date_ymd_slash', $v1->definition->columns['transaction_date']->transform);
 
         // current points to v2
-        $this->assertNotSame($v1Id, $updated['preset']->currentVersionId);
+        $this->assertNotSame($v1Id, $updated->preset->currentVersionId);
     }
 
     public function test_metadata_only_update_does_not_create_version(): void
@@ -110,12 +110,12 @@ final class MappingPresetCrudTest extends TestCase
 
         $update = new UpdateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
         $updated = $update->execute(1, new UpdateMappingPresetInput(
-            id: $created['preset']->id,
+            id: $created->preset->id,
             organizationId: 7,
             name: 'MUFG Ordinary',
         ));
 
-        $this->assertSame('MUFG Ordinary', $updated['preset']->name);
+        $this->assertSame('MUFG Ordinary', $updated->preset->name);
         $this->assertSame(1, $this->versions->count());
     }
 
@@ -130,11 +130,11 @@ final class MappingPresetCrudTest extends TestCase
         ));
 
         $get = new GetMappingPresetByIdUseCase($this->presets, $this->versions);
-        $result = $get->execute(new GetMappingPresetByIdInput($created['preset']->id, 7));
+        $result = $get->execute(new GetMappingPresetByIdInput($created->preset->id, 7));
 
-        $this->assertSame('SMBC', $result['preset']->name);
-        $this->assertNotNull($result['version']);
-        $this->assertSame(1, $result['version']->versionNumber);
+        $this->assertSame('SMBC', $result->preset->name);
+        $this->assertNotNull($result->version);
+        $this->assertSame(1, $result->version->versionNumber);
     }
 
     public function test_cross_tenant_get_is_not_found(): void
@@ -150,7 +150,7 @@ final class MappingPresetCrudTest extends TestCase
         $get = new GetMappingPresetByIdUseCase($this->presets, $this->versions);
 
         $this->expectException(MappingPresetNotFoundException::class);
-        $get->execute(new GetMappingPresetByIdInput($created['preset']->id, 999));
+        $get->execute(new GetMappingPresetByIdInput($created->preset->id, 999));
     }
 
     public function test_delete_soft_deletes_and_records_audit(): void
@@ -165,9 +165,9 @@ final class MappingPresetCrudTest extends TestCase
 
         $auditRepo = new InMemoryAuditLogRepository();
         $delete = new DeleteMappingPresetUseCase($this->presets, new AuditRecorder($auditRepo));
-        $delete->execute(5, new DeleteMappingPresetInput($created['preset']->id, 7));
+        $delete->execute(5, new DeleteMappingPresetInput($created->preset->id, 7));
 
-        $this->assertNull($this->presets->findByIdInOrganization($created['preset']->id, 7));
+        $this->assertNull($this->presets->findByIdInOrganization($created->preset->id, 7));
 
         $log = $auditRepo->all()[0];
         $this->assertSame('mapping_preset.deleted', $log->action);

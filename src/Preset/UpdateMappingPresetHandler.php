@@ -56,6 +56,6 @@ final readonly class UpdateMappingPresetHandler
             ),
         );
 
-        return $this->response->create(MappingPresetSnapshot::toArray($result['preset'], $result['version']));
+        return $this->response->create(MappingPresetSnapshot::toArray($result->preset, $result->version));
     }
 }

@@ -6,8 +6,5 @@ namespace NeneProfile\Preset;
 
 interface GetMappingPresetByIdUseCaseInterface
 {
-    /**
-     * @return array{preset: MappingPreset, version: ?MappingPresetVersion}
-     */
-    public function execute(GetMappingPresetByIdInput $input): array;
+    public function execute(GetMappingPresetByIdInput $input): GetMappingPresetByIdOutput;
 }
