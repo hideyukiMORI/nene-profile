@@ -1,5 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, Field, Input } from '@/shared/ui'
+import { Field, FormCard, Input } from '@/shared/ui'
 import { useCreateOrganizationForm } from '../hooks/use-create-organization-form'
 
 interface CreateOrganizationFormProps {
@@ -19,66 +19,37 @@ export function CreateOrganizationForm({ onCreated, onCancel }: CreateOrganizati
     : undefined
 
   return (
-    <form
+    <FormCard
+      title={t('admin.organizations.create.title')}
       onSubmit={(event) => {
         void handleSubmit(submit)(event)
       }}
-      noValidate
+      isSubmitting={isSubmitting}
+      submitLabel={t('admin.organizations.create.submit')}
+      submittingLabel={t('common.state.submitting')}
+      submitTestId="org-create-submit"
+      cancel={{ label: t('common.actions.cancel'), onClick: onCancel }}
+      {...(error !== null ? { error: t('admin.organizations.create.error') } : {})}
     >
-      <div className="card">
-        <div className="card__head">
-          <h2 className="card__title">{t('admin.organizations.create.title')}</h2>
-        </div>
-        <div className="card__body">
-          <div className="form-grid">
-            <Field
-              label={t('admin.organizations.create.name')}
-              {...(formState.errors.name
-                ? { error: t('admin.organizations.create.nameRequired') }
-                : {})}
-            >
-              {({ id, invalid }) => (
-                <Input id={id} type="text" invalid={invalid} {...register('name')} />
-              )}
-            </Field>
+      <Field
+        label={t('admin.organizations.create.name')}
+        {...(formState.errors.name ? { error: t('admin.organizations.create.nameRequired') } : {})}
+      >
+        {({ id, invalid }) => <Input id={id} type="text" invalid={invalid} {...register('name')} />}
+      </Field>
 
-            <Field
-              label={t('admin.organizations.create.slug')}
-              {...(slugError !== undefined ? { error: slugError } : {})}
-            >
-              {({ id, invalid }) => (
-                <Input
-                  id={id}
-                  type="text"
-                  className="mono"
-                  invalid={invalid}
-                  {...register('slug')}
-                />
-              )}
-            </Field>
+      <Field
+        label={t('admin.organizations.create.slug')}
+        {...(slugError !== undefined ? { error: slugError } : {})}
+      >
+        {({ id, invalid }) => (
+          <Input id={id} type="text" className="mono" invalid={invalid} {...register('slug')} />
+        )}
+      </Field>
 
-            <Field label={t('admin.organizations.create.customDomain')}>
-              {({ id }) => (
-                <Input id={id} type="text" className="mono" {...register('customDomain')} />
-              )}
-            </Field>
-
-            {error !== null ? (
-              <span className="field__error" role="alert">
-                {t('admin.organizations.create.error')}
-              </span>
-            ) : null}
-          </div>
-        </div>
-        <div className="card__foot">
-          <Button variant="ghost" disabled={isSubmitting} onClick={onCancel}>
-            {t('common.actions.cancel')}
-          </Button>
-          <Button type="submit" disabled={isSubmitting} data-testid="org-create-submit">
-            {isSubmitting ? t('common.state.submitting') : t('admin.organizations.create.submit')}
-          </Button>
-        </div>
-      </div>
-    </form>
+      <Field label={t('admin.organizations.create.customDomain')}>
+        {({ id }) => <Input id={id} type="text" className="mono" {...register('customDomain')} />}
+      </Field>
+    </FormCard>
   )
 }
