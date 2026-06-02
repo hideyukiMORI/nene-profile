@@ -14,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface;
 final readonly class ListImportJobsHandler
 {
     public function __construct(
-        private ListImportJobsUseCase $useCase,
+        private ListImportJobsUseCaseInterface $useCase,
         private JsonResponseFactory $response,
         private ProblemDetailsResponseFactory $problemDetails,
     ) {
@@ -29,13 +29,17 @@ final readonly class ListImportJobsHandler
         }
 
         $pagination = PaginationQueryParser::parse($request);
-        $result = $this->useCase->execute($organizationId, $pagination->limit, $pagination->offset);
+        $output = $this->useCase->execute(new ListImportJobsInput(
+            organizationId: $organizationId,
+            limit: $pagination->limit,
+            offset: $pagination->offset,
+        ));
 
         return $this->response->create([
-            'items'  => array_map(static fn (ImportJob $j): array => ImportJobSnapshot::toArray($j), $result['items']),
-            'total'  => $result['total'],
-            'limit'  => $pagination->limit,
-            'offset' => $pagination->offset,
+            'items'  => array_map(static fn (ImportJob $j): array => ImportJobSnapshot::toArray($j), $output->items),
+            'total'  => $output->total,
+            'limit'  => $output->limit,
+            'offset' => $output->offset,
         ]);
     }
 }

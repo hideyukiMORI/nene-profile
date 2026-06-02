@@ -7,6 +7,7 @@ namespace NeneProfile\Tests\ImportJob;
 use NeneProfile\ImportJob\ImportJob;
 use NeneProfile\ImportJob\ImportJobError;
 use NeneProfile\ImportJob\ImportJobNotFoundException;
+use NeneProfile\ImportJob\ListImportJobErrorsInput;
 use NeneProfile\ImportJob\ListImportJobErrorsUseCase;
 use PHPUnit\Framework\TestCase;
 
@@ -44,11 +45,11 @@ final class ListImportJobErrorsUseCaseTest extends TestCase
             new ImportJobError(rawRowNumber: 5, message: 'bad amount'),
         ]);
 
-        $result = $this->useCase->execute($id, 7, 20, 0);
+        $output = $this->useCase->execute(new ListImportJobErrorsInput(jobId: $id, organizationId: 7, limit: 20, offset: 0));
 
-        $this->assertSame(2, $result['total']);
-        $this->assertCount(2, $result['items']);
-        $this->assertSame(3, $result['items'][0]->rawRowNumber);
+        $this->assertSame(2, $output->total);
+        $this->assertCount(2, $output->items);
+        $this->assertSame(3, $output->items[0]->rawRowNumber);
     }
 
     public function test_applies_limit_and_offset_to_errors(): void
@@ -60,18 +61,18 @@ final class ListImportJobErrorsUseCaseTest extends TestCase
             new ImportJobError(rawRowNumber: 3, message: 'e3'),
         ]);
 
-        $result = $this->useCase->execute($id, 7, 1, 1);
+        $output = $this->useCase->execute(new ListImportJobErrorsInput(jobId: $id, organizationId: 7, limit: 1, offset: 1));
 
-        $this->assertSame(3, $result['total']);
-        $this->assertCount(1, $result['items']);
-        $this->assertSame(2, $result['items'][0]->rawRowNumber);
+        $this->assertSame(3, $output->total);
+        $this->assertCount(1, $output->items);
+        $this->assertSame(2, $output->items[0]->rawRowNumber);
     }
 
     public function test_throws_not_found_for_unknown_job(): void
     {
         $this->expectException(ImportJobNotFoundException::class);
 
-        $this->useCase->execute(999, 7, 20, 0);
+        $this->useCase->execute(new ListImportJobErrorsInput(jobId: 999, organizationId: 7, limit: 20, offset: 0));
     }
 
     public function test_throws_not_found_for_cross_tenant_job(): void
@@ -80,6 +81,6 @@ final class ListImportJobErrorsUseCaseTest extends TestCase
 
         $this->expectException(ImportJobNotFoundException::class);
 
-        $this->useCase->execute($id, 99, 20, 0);
+        $this->useCase->execute(new ListImportJobErrorsInput(jobId: $id, organizationId: 99, limit: 20, offset: 0));
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\Tests\ImportJob;
 
 use NeneProfile\ImportJob\ImportJob;
+use NeneProfile\ImportJob\ListImportJobsInput;
 use NeneProfile\ImportJob\ListImportJobsUseCase;
 use PHPUnit\Framework\TestCase;
 
@@ -40,11 +41,11 @@ final class ListImportJobsUseCaseTest extends TestCase
         $this->seed('b.csv', 7);
         $this->seed('other.csv', 99);
 
-        $result = $this->useCase->execute(7, 20, 0);
+        $output = $this->useCase->execute(new ListImportJobsInput(organizationId: 7, limit: 20, offset: 0));
 
-        $this->assertSame(2, $result['total']);
-        $this->assertCount(2, $result['items']);
-        foreach ($result['items'] as $job) {
+        $this->assertSame(2, $output->total);
+        $this->assertCount(2, $output->items);
+        foreach ($output->items as $job) {
             $this->assertSame(7, $job->organizationId);
         }
     }
@@ -55,19 +56,19 @@ final class ListImportJobsUseCaseTest extends TestCase
             $this->seed("j{$i}.csv", 7);
         }
 
-        $result = $this->useCase->execute(7, 1, 1);
+        $output = $this->useCase->execute(new ListImportJobsInput(organizationId: 7, limit: 1, offset: 1));
 
-        $this->assertSame(3, $result['total']);
-        $this->assertCount(1, $result['items']);
+        $this->assertSame(3, $output->total);
+        $this->assertCount(1, $output->items);
     }
 
     public function test_empty_for_organization_without_jobs(): void
     {
         $this->seed('a.csv', 7);
 
-        $result = $this->useCase->execute(1, 20, 0);
+        $output = $this->useCase->execute(new ListImportJobsInput(organizationId: 1, limit: 20, offset: 0));
 
-        $this->assertSame(0, $result['total']);
-        $this->assertSame([], $result['items']);
+        $this->assertSame(0, $output->total);
+        $this->assertSame([], $output->items);
     }
 }

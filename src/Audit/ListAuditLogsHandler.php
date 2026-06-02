@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\Audit;
 
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\PaginationQueryParser;
 use NeneProfile\Auth\AuthContext;
 use NeneProfile\Auth\Role;
 use Psr\Http\Message\ResponseInterface;
@@ -19,9 +20,6 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final readonly class ListAuditLogsHandler
 {
-    private const MAX_LIMIT = 100;
-    private const DEFAULT_LIMIT = 20;
-
     public function __construct(
         private ListAuditLogsUseCaseInterface $useCase,
         private JsonResponseFactory $response,
@@ -30,17 +28,15 @@ final readonly class ListAuditLogsHandler
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $query  = $request->getQueryParams();
-        $limit  = min(self::MAX_LIMIT, max(1, (int) ($query['limit'] ?? self::DEFAULT_LIMIT)));
-        $offset = max(0, (int) ($query['offset'] ?? 0));
+        $pagination = PaginationQueryParser::parse($request);
 
         $role           = AuthContext::role($request);
         $organizationId = ($role === Role::Superadmin) ? null : AuthContext::organizationId($request);
 
         $output = $this->useCase->execute(new ListAuditLogsInput(
             organizationId: $organizationId,
-            limit: $limit,
-            offset: $offset,
+            limit: $pagination->limit,
+            offset: $pagination->offset,
         ));
 
         return $this->response->create([

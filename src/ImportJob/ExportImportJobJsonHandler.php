@@ -14,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface;
 final readonly class ExportImportJobJsonHandler
 {
     public function __construct(
-        private ExportImportJobUseCase $useCase,
+        private ExportImportJobUseCaseInterface $useCase,
         private JsonResponseFactory $response,
         private ProblemDetailsResponseFactory $problemDetails,
     ) {
@@ -32,12 +32,12 @@ final readonly class ExportImportJobJsonHandler
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id = (int) ($params['id'] ?? 0);
 
-        $result = $this->useCase->execute($id, $organizationId);
-        $job = $result['job'];
+        $output = $this->useCase->execute(new ExportImportJobInput(jobId: $id, organizationId: $organizationId));
+        $job = $output->job;
 
         $rows = array_map(
             static fn (NormalizedTransaction $t): array => StandardTransactionSerializer::toArray($t, $job->id, $job->presetVersionId),
-            $result['transactions'],
+            $output->transactions,
         );
 
         return $this->response->createList($rows);

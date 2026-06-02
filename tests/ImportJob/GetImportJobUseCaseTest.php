@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\ImportJob;
 
+use NeneProfile\ImportJob\GetImportJobInput;
 use NeneProfile\ImportJob\GetImportJobUseCase;
 use NeneProfile\ImportJob\ImportJob;
 use NeneProfile\ImportJob\ImportJobNotFoundException;
@@ -39,7 +40,7 @@ final class GetImportJobUseCaseTest extends TestCase
     {
         $id = $this->seed(7);
 
-        $job = $this->useCase->execute($id, 7);
+        $job = $this->useCase->execute(new GetImportJobInput(id: $id, organizationId: 7));
 
         $this->assertSame($id, $job->id);
         $this->assertSame('bank.csv', $job->originalFilename);
@@ -49,7 +50,7 @@ final class GetImportJobUseCaseTest extends TestCase
     {
         $this->expectException(ImportJobNotFoundException::class);
 
-        $this->useCase->execute(999, 7);
+        $this->useCase->execute(new GetImportJobInput(id: 999, organizationId: 7));
     }
 
     public function test_throws_not_found_for_cross_tenant_access(): void
@@ -58,6 +59,6 @@ final class GetImportJobUseCaseTest extends TestCase
 
         $this->expectException(ImportJobNotFoundException::class);
 
-        $this->useCase->execute($id, 99);
+        $this->useCase->execute(new GetImportJobInput(id: $id, organizationId: 99));
     }
 }

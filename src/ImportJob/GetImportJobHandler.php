@@ -14,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface;
 final readonly class GetImportJobHandler
 {
     public function __construct(
-        private GetImportJobUseCase $useCase,
+        private GetImportJobUseCaseInterface $useCase,
         private JsonResponseFactory $response,
         private ProblemDetailsResponseFactory $problemDetails,
     ) {
@@ -32,7 +32,7 @@ final readonly class GetImportJobHandler
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id = (int) ($params['id'] ?? 0);
 
-        $job = $this->useCase->execute($id, $organizationId);
+        $job = $this->useCase->execute(new GetImportJobInput(id: $id, organizationId: $organizationId));
 
         return $this->response->create(ImportJobSnapshot::toArray($job));
     }
