@@ -14,6 +14,7 @@ use NeneProfile\Preset\CreateMappingPresetInput;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
 use NeneProfile\Preset\MappingDefinitionFactory;
 use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Tests\OrgSettings\InMemoryOrganizationSettingsRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetVersionRepository;
 use NeneProfile\Transformer\TransformerRegistry;
@@ -63,6 +64,7 @@ final class CreateImportJobUseCaseTest extends TestCase
             new CsvParser(),
             new NormalizationRunner(new TransformerRegistry()),
             new AuditRecorder($this->auditRepo),
+            new InMemoryOrganizationSettingsRepository(),
         );
     }
 

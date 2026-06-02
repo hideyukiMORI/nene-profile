@@ -15,8 +15,6 @@ use Psr\Http\Message\UploadedFileInterface;
 
 final readonly class CreateImportJobHandler
 {
-    private const MAX_FILE_BYTES = 10_485_760; // 10 MiB
-
     public function __construct(
         private CreateImportJobUseCaseInterface $useCase,
         private JsonResponseFactory $response,
@@ -39,11 +37,8 @@ final readonly class CreateImportJobHandler
             throw new ValidationException([new ValidationError('file', 'A CSV file upload is required.', 'required')]);
         }
 
-        $size = $file->getSize();
-        if ($size !== null && $size > self::MAX_FILE_BYTES) {
-            return $this->problemDetails->create($request, 'file-too-large', 'File Too Large', 413, 'The uploaded file exceeds the 10 MiB limit.');
-        }
-
+        // The per-organization size limit is enforced in the use case
+        // (CreateImportJobUseCase) against organization_settings, not here.
         $parsedBody = $request->getParsedBody();
         $presetId = is_array($parsedBody) && isset($parsedBody['preset_id']) && is_numeric($parsedBody['preset_id'])
             ? (int) $parsedBody['preset_id']

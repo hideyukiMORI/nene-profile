@@ -15,6 +15,7 @@ use NeneProfile\ImportJob\ExportImportJobJsonHandler;
 use NeneProfile\ImportJob\ExportImportJobUseCase;
 use NeneProfile\ImportJob\GetImportJobHandler;
 use NeneProfile\ImportJob\GetImportJobUseCase;
+use NeneProfile\ImportJob\ImportFileTooLargeException;
 use NeneProfile\ImportJob\ImportJob;
 use NeneProfile\ImportJob\ImportJobError;
 use NeneProfile\ImportJob\ListImportJobErrorsHandler;
@@ -23,10 +24,12 @@ use NeneProfile\ImportJob\ListImportJobsHandler;
 use NeneProfile\ImportJob\ListImportJobsUseCase;
 use NeneProfile\ImportJob\NormalizationRunner;
 use NeneProfile\ImportJob\NormalizedTransaction;
+use NeneProfile\OrgSettings\OrganizationSettings;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
 use NeneProfile\Preset\MappingDefinitionFactory;
 use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
+use NeneProfile\Tests\OrgSettings\InMemoryOrganizationSettingsRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetVersionRepository;
 use NeneProfile\Transformer\TransformerRegistry;
@@ -42,6 +45,7 @@ final class ImportJobHandlersTest extends TestCase
     private InMemoryMappingPresetRepository $presets;
     private InMemoryMappingPresetVersionRepository $versions;
     private AuditRecorder $audit;
+    private InMemoryOrganizationSettingsRepository $settings;
     private int $presetVersionId;
 
     protected function setUp(): void
@@ -51,6 +55,7 @@ final class ImportJobHandlersTest extends TestCase
         $this->presets  = new InMemoryMappingPresetRepository();
         $this->versions = new InMemoryMappingPresetVersionRepository();
         $this->audit    = new AuditRecorder(new InMemoryAuditLogRepository());
+        $this->settings = new InMemoryOrganizationSettingsRepository();
 
         // Seed a preset+version to use in tests
         $uc  = new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
@@ -353,6 +358,7 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
             $this->problemFactory(),
@@ -376,6 +382,7 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
             $this->problemFactory(),
@@ -400,6 +407,7 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
             $this->problemFactory(),
@@ -416,8 +424,13 @@ final class ImportJobHandlersTest extends TestCase
         $handler->handle($request);
     }
 
-    public function test_create_returns_413_when_file_too_large(): void
+    public function test_create_rejects_file_above_the_organization_limit(): void
     {
+        // The limit is per-organization (organization_settings.max_file_size_bytes),
+        // enforced in the use case. Seed a tiny limit for org 7 and exceed it. The
+        // ImportFileTooLargeException → 413 mapping is covered by its handler test.
+        $this->settings->upsert(new OrganizationSettings(organizationId: 1, maxFileSizeBytes: 4));
+
         $handler = new CreateImportJobHandler(
             new CreateImportJobUseCase(
                 $this->jobs,
@@ -427,22 +440,21 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
             $this->problemFactory(),
         );
 
         $psr17  = $this->psr17();
-        $stream = $psr17->createStream('x');
-        // Report oversized file: > 10 MiB (10_485_760)
-        $upload = new UploadedFile($stream, 10_485_761, UPLOAD_ERR_OK, 'big.csv', 'text/csv');
+        $stream = $psr17->createStream('123456789'); // 9 bytes > 4-byte limit
+        $upload = new UploadedFile($stream, (int) $stream->getSize(), UPLOAD_ERR_OK, 'big.csv', 'text/csv');
 
         $request = $this->withAuth($this->request('POST', '/admin/import-jobs'))
             ->withUploadedFiles(['file' => $upload])
             ->withParsedBody(['preset_id' => '1']);
 
-        $response = $handler->handle($request);
-
-        $this->assertSame(413, $response->getStatusCode());
+        $this->expectException(ImportFileTooLargeException::class);
+        $handler->handle($request);
     }
 }

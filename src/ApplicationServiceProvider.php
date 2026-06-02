@@ -15,6 +15,7 @@ use NeneProfile\Auth\AuthRouteRegistrar;
 use NeneProfile\Auth\AuthServiceProvider;
 use NeneProfile\Auth\InvalidCredentialsExceptionHandler;
 use NeneProfile\Auth\InvalidCurrentPasswordExceptionHandler;
+use NeneProfile\ImportJob\ImportFileTooLargeExceptionHandler;
 use NeneProfile\ImportJob\ImportJobNotFoundExceptionHandler;
 use NeneProfile\ImportJob\ImportJobRouteRegistrar;
 use NeneProfile\ImportJob\ImportJobServiceProvider;
@@ -122,6 +123,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $presetNotFound            = $c->get(MappingPresetNotFoundExceptionHandler::class);
                     $invalidDefinition         = $c->get(InvalidMappingDefinitionExceptionHandler::class);
                     $importJobNotFound         = $c->get(ImportJobNotFoundExceptionHandler::class);
+                    $importFileTooLarge        = $c->get(ImportFileTooLargeExceptionHandler::class);
 
                     $handlers = [
                         $invalidCredentials,
@@ -136,6 +138,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         $presetNotFound,
                         $invalidDefinition,
                         $importJobNotFound,
+                        $importFileTooLarge,
                     ];
 
                     foreach ($handlers as $handler) {

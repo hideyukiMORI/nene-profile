@@ -11,6 +11,7 @@ use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use NeneProfile\Audit\AuditRecorderInterface;
+use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\Preset\MappingPresetRepositoryInterface;
 use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
 use NeneProfile\Support\Env;
@@ -62,6 +63,7 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                     self::get($c, CsvParser::class),
                     self::get($c, NormalizationRunner::class),
                     self::get($c, AuditRecorderInterface::class),
+                    self::get($c, OrganizationSettingsRepositoryInterface::class),
                 ),
             )
             ->set(
@@ -140,6 +142,12 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
             ->set(
                 ImportJobNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): ImportJobNotFoundExceptionHandler => new ImportJobNotFoundExceptionHandler(
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
+                ImportFileTooLargeExceptionHandler::class,
+                static fn (ContainerInterface $c): ImportFileTooLargeExceptionHandler => new ImportFileTooLargeExceptionHandler(
                     self::problemDetails($c),
                 ),
             )

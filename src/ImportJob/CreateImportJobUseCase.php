@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NeneProfile\ImportJob;
 
 use NeneProfile\Audit\AuditRecorderInterface;
+use NeneProfile\OrgSettings\OrganizationSettings;
+use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\Preset\MappingPresetNotFoundException;
 use NeneProfile\Preset\MappingPresetRepositoryInterface;
 use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
@@ -31,11 +33,22 @@ final readonly class CreateImportJobUseCase implements CreateImportJobUseCaseInt
         private CsvParser $parser,
         private NormalizationRunner $runner,
         private AuditRecorderInterface $audit,
+        private OrganizationSettingsRepositoryInterface $settings,
     ) {
     }
 
     public function execute(CreateImportJobInput $input): ImportJob
     {
+        // Enforce the organization's configured upload limit, not a global
+        // constant (backend-standards §7). Falls back to the documented default
+        // when the organization has no settings row yet.
+        $settings = $this->settings->findByOrganizationId($input->organizationId)
+            ?? OrganizationSettings::defaultsFor($input->organizationId);
+
+        if (strlen($input->fileContents) > $settings->maxFileSizeBytes) {
+            throw new ImportFileTooLargeException($settings->maxFileSizeBytes);
+        }
+
         $preset = $this->presets->findByIdInOrganization($input->presetId, $input->organizationId);
 
         if ($preset === null || $preset->currentVersionId === null) {
