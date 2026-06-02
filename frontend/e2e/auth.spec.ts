@@ -25,7 +25,7 @@ test.describe('login', () => {
 
     await page.goto('/login')
     await page.getByLabel('メールアドレス').fill('admin@example.com')
-    await page.getByLabel('パスワード').fill('wrong-password')
+    await page.getByLabel('パスワード', { exact: true }).fill('wrong-password')
     await page.getByTestId('login-submit').click()
 
     await expect(page.getByText('メールアドレスまたはパスワードが正しくありません。')).toBeVisible()
@@ -37,7 +37,7 @@ test.describe('login', () => {
 
     await page.goto('/login')
     await page.getByLabel('メールアドレス').fill('admin@example.com')
-    await page.getByLabel('パスワード').fill('secret-password')
+    await page.getByLabel('パスワード', { exact: true }).fill('secret-password')
     await page.getByTestId('login-submit').click()
 
     await expect(page.getByText('エラーが発生しました。')).toBeVisible()
