@@ -7,6 +7,7 @@ namespace NeneProfile\Preset;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\PaginationQueryParser;
+use Nene2\Http\PaginationResponse;
 use NeneProfile\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -36,11 +37,11 @@ final readonly class ListMappingPresetsHandler
             offset: $pagination->offset,
         ));
 
-        return $this->response->create([
-            'items'  => array_map(static fn (MappingPreset $p): array => MappingPresetSnapshot::toArray($p), $output->items),
-            'total'  => $output->total,
-            'limit'  => $output->limit,
-            'offset' => $output->offset,
-        ]);
+        return $this->response->create((new PaginationResponse(
+            items: array_map(static fn (MappingPreset $p): array => MappingPresetSnapshot::toArray($p), $output->items),
+            limit: $output->limit,
+            offset: $output->offset,
+            total: $output->total,
+        ))->toArray());
     }
 }

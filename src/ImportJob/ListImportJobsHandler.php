@@ -7,6 +7,7 @@ namespace NeneProfile\ImportJob;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\PaginationQueryParser;
+use Nene2\Http\PaginationResponse;
 use NeneProfile\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -35,11 +36,11 @@ final readonly class ListImportJobsHandler
             offset: $pagination->offset,
         ));
 
-        return $this->response->create([
-            'items'  => array_map(static fn (ImportJob $j): array => ImportJobSnapshot::toArray($j), $output->items),
-            'total'  => $output->total,
-            'limit'  => $output->limit,
-            'offset' => $output->offset,
-        ]);
+        return $this->response->create((new PaginationResponse(
+            items: array_map(static fn (ImportJob $j): array => ImportJobSnapshot::toArray($j), $output->items),
+            limit: $output->limit,
+            offset: $output->offset,
+            total: $output->total,
+        ))->toArray());
     }
 }

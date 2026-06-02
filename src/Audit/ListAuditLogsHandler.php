@@ -6,6 +6,7 @@ namespace NeneProfile\Audit;
 
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\PaginationQueryParser;
+use Nene2\Http\PaginationResponse;
 use NeneProfile\Auth\AuthContext;
 use NeneProfile\Auth\Role;
 use Psr\Http\Message\ResponseInterface;
@@ -39,8 +40,8 @@ final readonly class ListAuditLogsHandler
             offset: $pagination->offset,
         ));
 
-        return $this->response->create([
-            'items'  => array_map(static fn (AuditLog $log): array => [
+        return $this->response->create((new PaginationResponse(
+            items: array_map(static fn (AuditLog $log): array => [
                 'id'              => $log->id,
                 'actor_user_id'   => $log->actorUserId,
                 'organization_id' => $log->organizationId,
@@ -51,9 +52,9 @@ final readonly class ListAuditLogsHandler
                 'after'           => $log->after,
                 'created_at'      => $log->createdAt,
             ], $output->items),
-            'total'  => $output->total,
-            'limit'  => $output->limit,
-            'offset' => $output->offset,
-        ]);
+            limit: $output->limit,
+            offset: $output->offset,
+            total: $output->total,
+        ))->toArray());
     }
 }
