@@ -105,7 +105,7 @@ export async function login(page: Page, role = 'superadmin'): Promise<void> {
 
   await page.goto('/login')
   await page.getByLabel('メールアドレス').fill('admin@example.com')
-  await page.getByLabel('パスワード').fill('secret-password')
+  await page.getByLabel('パスワード', { exact: true }).fill('secret-password')
   await page.getByTestId('login-submit').click()
 
   await expect(page.getByRole('heading', { name: 'ダッシュボード' })).toBeVisible()
