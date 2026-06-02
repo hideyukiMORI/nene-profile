@@ -1,6 +1,6 @@
 import type { OrganizationSettings } from '@/entities/organization-settings'
 import { useTranslation } from '@/shared/i18n'
-import { Button, Field, Input, Select, type SelectOption } from '@/shared/ui'
+import { Field, FormCard, Input, Select, type SelectOption } from '@/shared/ui'
 import { ENCODINGS, useSettingsForm } from '../hooks/use-settings-form'
 
 interface SettingsFormProps {
@@ -26,93 +26,68 @@ export function SettingsForm({ settings }: SettingsFormProps) {
   const maxBytes = watch('maxFileSizeBytes')
 
   return (
-    <form
+    <FormCard
+      title={t('admin.settings.cardTitle')}
       onSubmit={(event) => {
         void handleSubmit(submit)(event)
       }}
-      noValidate
+      isSubmitting={isSubmitting}
+      submitLabel={t('admin.settings.save')}
+      submittingLabel={t('common.state.saving')}
+      submitTestId="settings-save"
+      cancel={{
+        label: t('common.actions.discard'),
+        onClick: () => {
+          reset()
+        },
+      }}
+      {...(error !== null ? { error: t('admin.settings.error') } : {})}
+      {...(isSaved ? { status: t('admin.settings.saved') } : {})}
     >
-      <div className="card">
-        <div className="card__head">
-          <h2 className="card__title">{t('admin.settings.cardTitle')}</h2>
-        </div>
-        <div className="card__body">
-          <div className="form-grid">
-            <Field label={t('admin.settings.defaultEncoding')}>
-              {({ id }) => (
-                <Select id={id} options={encodingOptions} {...register('defaultEncoding')} />
-              )}
-            </Field>
+      <Field label={t('admin.settings.defaultEncoding')}>
+        {({ id }) => <Select id={id} options={encodingOptions} {...register('defaultEncoding')} />}
+      </Field>
 
-            <Field
-              label={t('admin.settings.maxFileSize')}
-              {...(formState.errors.maxFileSizeBytes
-                ? { error: t('admin.settings.maxFileSizeInvalid') }
-                : {})}
-            >
-              {({ id, invalid }) => (
-                <div className="input-affix">
-                  <Input
-                    id={id}
-                    type="number"
-                    min={1}
-                    className="mono"
-                    invalid={invalid}
-                    {...register('maxFileSizeBytes', { valueAsNumber: true })}
-                  />
-                  <span className="suffix">{megabytes(maxBytes)}</span>
-                </div>
-              )}
-            </Field>
-
-            <hr className="divider" />
-
-            <Field label={t('admin.settings.clearBearerToken')}>
-              {({ id }) => (
-                <>
-                  <Input
-                    id={id}
-                    type="password"
-                    className="mono"
-                    autoComplete="off"
-                    placeholder={t('admin.settings.clearBearerTokenHint')}
-                    {...register('clearBearerToken')}
-                  />
-                  {settings.clearBearerTokenSet ? (
-                    <span className="field__hint">{t('admin.settings.clearBearerTokenSet')}</span>
-                  ) : null}
-                </>
-              )}
-            </Field>
-
-            {error !== null ? (
-              <span className="field__error" role="alert">
-                {t('admin.settings.error')}
-              </span>
-            ) : null}
-            {isSaved ? (
-              <span role="status" className="form-status">
-                {t('admin.settings.saved')}
-              </span>
-            ) : null}
+      <Field
+        label={t('admin.settings.maxFileSize')}
+        {...(formState.errors.maxFileSizeBytes
+          ? { error: t('admin.settings.maxFileSizeInvalid') }
+          : {})}
+      >
+        {({ id, invalid }) => (
+          <div className="input-affix">
+            <Input
+              id={id}
+              type="number"
+              min={1}
+              className="mono"
+              invalid={invalid}
+              {...register('maxFileSizeBytes', { valueAsNumber: true })}
+            />
+            <span className="suffix">{megabytes(maxBytes)}</span>
           </div>
-        </div>
-        <div className="card__foot">
-          <Button
-            variant="ghost"
-            type="button"
-            disabled={isSubmitting}
-            onClick={() => {
-              reset()
-            }}
-          >
-            {t('common.actions.discard')}
-          </Button>
-          <Button type="submit" disabled={isSubmitting} data-testid="settings-save">
-            {isSubmitting ? t('common.state.saving') : t('admin.settings.save')}
-          </Button>
-        </div>
-      </div>
-    </form>
+        )}
+      </Field>
+
+      <hr className="divider" />
+
+      <Field label={t('admin.settings.clearBearerToken')}>
+        {({ id }) => (
+          <>
+            <Input
+              id={id}
+              type="password"
+              className="mono"
+              autoComplete="off"
+              placeholder={t('admin.settings.clearBearerTokenHint')}
+              {...register('clearBearerToken')}
+            />
+            {settings.clearBearerTokenSet ? (
+              <span className="field__hint">{t('admin.settings.clearBearerTokenSet')}</span>
+            ) : null}
+          </>
+        )}
+      </Field>
+    </FormCard>
   )
 }
