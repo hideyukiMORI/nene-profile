@@ -15,10 +15,7 @@ final readonly class CreateMappingPresetUseCase implements CreateMappingPresetUs
     ) {
     }
 
-    /**
-     * @return array{preset: MappingPreset, version: MappingPresetVersion}
-     */
-    public function execute(?int $actorUserId, CreateMappingPresetInput $input): array
+    public function execute(?int $actorUserId, CreateMappingPresetInput $input): CreateMappingPresetOutput
     {
         $presetId = $this->presets->save(new MappingPreset(
             id: 0,
@@ -45,6 +42,6 @@ final readonly class CreateMappingPresetUseCase implements CreateMappingPresetUs
             after: MappingPresetSnapshot::toArray($preset, $version),
         );
 
-        return ['preset' => $preset, 'version' => $version];
+        return new CreateMappingPresetOutput(preset: $preset, version: $version);
     }
 }

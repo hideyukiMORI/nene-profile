@@ -15,6 +15,7 @@ use NeneProfile\ImportJob\ExportImportJobJsonHandler;
 use NeneProfile\ImportJob\ExportImportJobUseCase;
 use NeneProfile\ImportJob\GetImportJobHandler;
 use NeneProfile\ImportJob\GetImportJobUseCase;
+use NeneProfile\ImportJob\ImportFileTooLargeException;
 use NeneProfile\ImportJob\ImportJob;
 use NeneProfile\ImportJob\ImportJobError;
 use NeneProfile\ImportJob\ListImportJobErrorsHandler;
@@ -23,10 +24,13 @@ use NeneProfile\ImportJob\ListImportJobsHandler;
 use NeneProfile\ImportJob\ListImportJobsUseCase;
 use NeneProfile\ImportJob\NormalizationRunner;
 use NeneProfile\ImportJob\NormalizedTransaction;
+use NeneProfile\Organization\OrganizationNotResolvedException;
+use NeneProfile\OrgSettings\OrganizationSettings;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
 use NeneProfile\Preset\MappingDefinitionFactory;
 use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
+use NeneProfile\Tests\OrgSettings\InMemoryOrganizationSettingsRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetVersionRepository;
 use NeneProfile\Transformer\TransformerRegistry;
@@ -42,6 +46,7 @@ final class ImportJobHandlersTest extends TestCase
     private InMemoryMappingPresetRepository $presets;
     private InMemoryMappingPresetVersionRepository $versions;
     private AuditRecorder $audit;
+    private InMemoryOrganizationSettingsRepository $settings;
     private int $presetVersionId;
 
     protected function setUp(): void
@@ -51,6 +56,7 @@ final class ImportJobHandlersTest extends TestCase
         $this->presets  = new InMemoryMappingPresetRepository();
         $this->versions = new InMemoryMappingPresetVersionRepository();
         $this->audit    = new AuditRecorder(new InMemoryAuditLogRepository());
+        $this->settings = new InMemoryOrganizationSettingsRepository();
 
         // Seed a preset+version to use in tests
         $uc  = new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
@@ -71,7 +77,7 @@ final class ImportJobHandlersTest extends TestCase
             bankLabel: 'MUFG',
             definition: $def,
         ));
-        $this->presetVersionId = $result['version']->id;
+        $this->presetVersionId = $result->version->id;
     }
 
     private function savedJob(int $orgId = 1, string $status = ImportJob::STATUS_COMPLETED): int
@@ -102,7 +108,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new GetImportJobHandler(
             new GetImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}"))
@@ -121,10 +126,11 @@ final class ImportJobHandlersTest extends TestCase
 
     public function test_get_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new GetImportJobHandler(
             new GetImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -132,7 +138,6 @@ final class ImportJobHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_get_propagates_not_found(): void
@@ -142,7 +147,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new GetImportJobHandler(
             new GetImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', '/admin/import-jobs/999'))
@@ -161,7 +165,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobsHandler(
             new ListImportJobsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->withAuth($this->request('GET', '/admin/import-jobs')));
@@ -181,7 +184,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobsHandler(
             new ListImportJobsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', '/admin/import-jobs'))
@@ -207,7 +209,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobErrorsHandler(
             new ListImportJobErrorsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/errors"))
@@ -232,7 +233,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ListImportJobErrorsHandler(
             new ListImportJobErrorsUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/errors"))
@@ -266,7 +266,6 @@ final class ImportJobHandlersTest extends TestCase
         $handler = new ExportImportJobJsonHandler(
             new ExportImportJobUseCase($this->jobs),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/export.json"))
@@ -307,7 +306,6 @@ final class ImportJobHandlersTest extends TestCase
             new ExportImportJobUseCase($this->jobs),
             $this->psr17(),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/import-jobs/{$id}/export.csv"))
@@ -325,11 +323,12 @@ final class ImportJobHandlersTest extends TestCase
 
     public function test_export_csv_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new ExportImportJobCsvHandler(
             new ExportImportJobUseCase($this->jobs),
             $this->psr17(),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -337,13 +336,14 @@ final class ImportJobHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     // ── CreateImportJobHandler ────────────────────────────────────────────
 
     public function test_create_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new CreateImportJobHandler(
             new CreateImportJobUseCase(
                 $this->jobs,
@@ -353,14 +353,13 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->request('POST', '/admin/import-jobs'));
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_create_throws_validation_when_file_missing(): void
@@ -376,9 +375,9 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('POST', '/admin/import-jobs'))
@@ -400,9 +399,9 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $psr17  = $this->psr17();
@@ -416,8 +415,13 @@ final class ImportJobHandlersTest extends TestCase
         $handler->handle($request);
     }
 
-    public function test_create_returns_413_when_file_too_large(): void
+    public function test_create_rejects_file_above_the_organization_limit(): void
     {
+        // The limit is per-organization (organization_settings.max_file_size_bytes),
+        // enforced in the use case. Seed a tiny limit for org 7 and exceed it. The
+        // ImportFileTooLargeException → 413 mapping is covered by its handler test.
+        $this->settings->upsert(new OrganizationSettings(organizationId: 1, maxFileSizeBytes: 4));
+
         $handler = new CreateImportJobHandler(
             new CreateImportJobUseCase(
                 $this->jobs,
@@ -427,22 +431,20 @@ final class ImportJobHandlersTest extends TestCase
                 new CsvParser(),
                 new NormalizationRunner(new TransformerRegistry()),
                 $this->audit,
+                $this->settings,
             ),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $psr17  = $this->psr17();
-        $stream = $psr17->createStream('x');
-        // Report oversized file: > 10 MiB (10_485_760)
-        $upload = new UploadedFile($stream, 10_485_761, UPLOAD_ERR_OK, 'big.csv', 'text/csv');
+        $stream = $psr17->createStream('123456789'); // 9 bytes > 4-byte limit
+        $upload = new UploadedFile($stream, (int) $stream->getSize(), UPLOAD_ERR_OK, 'big.csv', 'text/csv');
 
         $request = $this->withAuth($this->request('POST', '/admin/import-jobs'))
             ->withUploadedFiles(['file' => $upload])
             ->withParsedBody(['preset_id' => '1']);
 
-        $response = $handler->handle($request);
-
-        $this->assertSame(413, $response->getStatusCode());
+        $this->expectException(ImportFileTooLargeException::class);
+        $handler->handle($request);
     }
 }

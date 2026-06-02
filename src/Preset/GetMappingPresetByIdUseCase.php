@@ -12,10 +12,7 @@ final readonly class GetMappingPresetByIdUseCase implements GetMappingPresetById
     ) {
     }
 
-    /**
-     * @return array{preset: MappingPreset, version: ?MappingPresetVersion}
-     */
-    public function execute(GetMappingPresetByIdInput $input): array
+    public function execute(GetMappingPresetByIdInput $input): GetMappingPresetByIdOutput
     {
         $preset = $this->presets->findByIdInOrganization($input->id, $input->organizationId);
 
@@ -27,6 +24,6 @@ final readonly class GetMappingPresetByIdUseCase implements GetMappingPresetById
             ? $this->versions->findById($preset->currentVersionId)
             : null;
 
-        return ['preset' => $preset, 'version' => $version];
+        return new GetMappingPresetByIdOutput(preset: $preset, version: $version);
     }
 }

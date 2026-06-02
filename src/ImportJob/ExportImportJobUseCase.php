@@ -4,27 +4,24 @@ declare(strict_types=1);
 
 namespace NeneProfile\ImportJob;
 
-final readonly class ExportImportJobUseCase
+final readonly class ExportImportJobUseCase implements ExportImportJobUseCaseInterface
 {
     public function __construct(
         private ImportJobRepositoryInterface $jobs,
     ) {
     }
 
-    /**
-     * @return array{job: ImportJob, transactions: list<NormalizedTransaction>}
-     */
-    public function execute(int $jobId, int $organizationId): array
+    public function execute(ExportImportJobInput $input): ExportImportJobOutput
     {
-        $job = $this->jobs->findByIdInOrganization($jobId, $organizationId);
+        $job = $this->jobs->findByIdInOrganization($input->jobId, $input->organizationId);
 
         if ($job === null) {
-            throw new ImportJobNotFoundException($jobId);
+            throw new ImportJobNotFoundException($input->jobId);
         }
 
-        return [
-            'job'          => $job,
-            'transactions' => $this->jobs->findTransactions($jobId),
-        ];
+        return new ExportImportJobOutput(
+            job: $job,
+            transactions: $this->jobs->findTransactions($input->jobId),
+        );
     }
 }

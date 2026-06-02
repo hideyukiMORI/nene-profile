@@ -7,6 +7,7 @@ namespace NeneProfile\Tests\User;
 use Nene2\Routing\Router;
 use Nene2\Validation\ValidationException;
 use NeneProfile\Audit\AuditRecorder;
+use NeneProfile\Organization\OrganizationNotResolvedException;
 use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
 use NeneProfile\User\CreateUserHandler;
@@ -53,7 +54,6 @@ final class UserHandlersTest extends TestCase
         $handler = new CreateUserHandler(
             new CreateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth(
@@ -77,10 +77,11 @@ final class UserHandlersTest extends TestCase
 
     public function test_create_returns_400_when_no_org_context(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new CreateUserHandler(
             new CreateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->jsonRequest('POST', '/admin/users', [
@@ -91,7 +92,6 @@ final class UserHandlersTest extends TestCase
 
         $response = $handler->handle($request);
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_create_throws_validation_when_email_missing(): void
@@ -101,7 +101,6 @@ final class UserHandlersTest extends TestCase
         $handler = new CreateUserHandler(
             new CreateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/users', [
@@ -118,7 +117,6 @@ final class UserHandlersTest extends TestCase
         $handler = new CreateUserHandler(
             new CreateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/users', [
@@ -136,7 +134,6 @@ final class UserHandlersTest extends TestCase
         $handler = new CreateUserHandler(
             new CreateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/users', [
@@ -152,7 +149,6 @@ final class UserHandlersTest extends TestCase
         $handler = new CreateUserHandler(
             new CreateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/users', [
@@ -173,7 +169,6 @@ final class UserHandlersTest extends TestCase
         $handler = new CreateUserHandler(
             new CreateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/users', [
@@ -192,7 +187,6 @@ final class UserHandlersTest extends TestCase
         $handler = new GetUserByIdHandler(
             new GetUserByIdUseCase($this->users),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/users/{$id}"))
@@ -209,10 +203,11 @@ final class UserHandlersTest extends TestCase
 
     public function test_get_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new GetUserByIdHandler(
             new GetUserByIdUseCase($this->users),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -220,7 +215,6 @@ final class UserHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     // ── ListUsersHandler ──────────────────────────────────────────────────
@@ -233,7 +227,6 @@ final class UserHandlersTest extends TestCase
         $handler = new ListUsersHandler(
             new ListUsersUseCase($this->users),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->withAuth($this->request('GET', '/admin/users')));
@@ -261,7 +254,6 @@ final class UserHandlersTest extends TestCase
         $handler = new ListUsersHandler(
             new ListUsersUseCase($this->users),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', '/admin/users'))
@@ -276,15 +268,15 @@ final class UserHandlersTest extends TestCase
 
     public function test_list_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new ListUsersHandler(
             new ListUsersUseCase($this->users),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->request('GET', '/admin/users'));
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     // ── UpdateUserHandler ─────────────────────────────────────────────────
@@ -296,7 +288,6 @@ final class UserHandlersTest extends TestCase
         $handler = new UpdateUserHandler(
             new UpdateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth(
@@ -312,10 +303,11 @@ final class UserHandlersTest extends TestCase
 
     public function test_update_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new UpdateUserHandler(
             new UpdateUserUseCase($this->users, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -323,7 +315,6 @@ final class UserHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     // ── DeleteUserHandler ─────────────────────────────────────────────────
@@ -342,7 +333,6 @@ final class UserHandlersTest extends TestCase
         $handler = new DeleteUserHandler(
             new DeleteUserUseCase($this->users, $this->audit),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('DELETE', "/admin/users/{$targetId}"), userId: $actorId)
@@ -355,10 +345,11 @@ final class UserHandlersTest extends TestCase
 
     public function test_delete_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new DeleteUserHandler(
             new DeleteUserUseCase($this->users, $this->audit),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -366,7 +357,6 @@ final class UserHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_delete_propagates_cannot_delete_self(): void
@@ -378,7 +368,6 @@ final class UserHandlersTest extends TestCase
         $handler = new DeleteUserHandler(
             new DeleteUserUseCase($this->users, $this->audit),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('DELETE', "/admin/users/{$id}"), userId: $id)

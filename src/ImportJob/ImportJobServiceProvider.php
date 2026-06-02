@@ -11,6 +11,7 @@ use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use NeneProfile\Audit\AuditRecorderInterface;
+use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\Preset\MappingPresetRepositoryInterface;
 use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
 use NeneProfile\Support\Env;
@@ -62,29 +63,30 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                     self::get($c, CsvParser::class),
                     self::get($c, NormalizationRunner::class),
                     self::get($c, AuditRecorderInterface::class),
+                    self::get($c, OrganizationSettingsRepositoryInterface::class),
                 ),
             )
             ->set(
-                ListImportJobsUseCase::class,
-                static fn (ContainerInterface $c): ListImportJobsUseCase => new ListImportJobsUseCase(
+                ListImportJobsUseCaseInterface::class,
+                static fn (ContainerInterface $c): ListImportJobsUseCaseInterface => new ListImportJobsUseCase(
                     self::get($c, ImportJobRepositoryInterface::class),
                 ),
             )
             ->set(
-                GetImportJobUseCase::class,
-                static fn (ContainerInterface $c): GetImportJobUseCase => new GetImportJobUseCase(
+                GetImportJobUseCaseInterface::class,
+                static fn (ContainerInterface $c): GetImportJobUseCaseInterface => new GetImportJobUseCase(
                     self::get($c, ImportJobRepositoryInterface::class),
                 ),
             )
             ->set(
-                ListImportJobErrorsUseCase::class,
-                static fn (ContainerInterface $c): ListImportJobErrorsUseCase => new ListImportJobErrorsUseCase(
+                ListImportJobErrorsUseCaseInterface::class,
+                static fn (ContainerInterface $c): ListImportJobErrorsUseCaseInterface => new ListImportJobErrorsUseCase(
                     self::get($c, ImportJobRepositoryInterface::class),
                 ),
             )
             ->set(
-                ExportImportJobUseCase::class,
-                static fn (ContainerInterface $c): ExportImportJobUseCase => new ExportImportJobUseCase(
+                ExportImportJobUseCaseInterface::class,
+                static fn (ContainerInterface $c): ExportImportJobUseCaseInterface => new ExportImportJobUseCase(
                     self::get($c, ImportJobRepositoryInterface::class),
                 ),
             )
@@ -93,53 +95,53 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                 static fn (ContainerInterface $c): CreateImportJobHandler => new CreateImportJobHandler(
                     self::get($c, CreateImportJobUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
                 ListImportJobsHandler::class,
                 static fn (ContainerInterface $c): ListImportJobsHandler => new ListImportJobsHandler(
-                    self::get($c, ListImportJobsUseCase::class),
+                    self::get($c, ListImportJobsUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
                 GetImportJobHandler::class,
                 static fn (ContainerInterface $c): GetImportJobHandler => new GetImportJobHandler(
-                    self::get($c, GetImportJobUseCase::class),
+                    self::get($c, GetImportJobUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
                 ListImportJobErrorsHandler::class,
                 static fn (ContainerInterface $c): ListImportJobErrorsHandler => new ListImportJobErrorsHandler(
-                    self::get($c, ListImportJobErrorsUseCase::class),
+                    self::get($c, ListImportJobErrorsUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
                 ExportImportJobJsonHandler::class,
                 static fn (ContainerInterface $c): ExportImportJobJsonHandler => new ExportImportJobJsonHandler(
-                    self::get($c, ExportImportJobUseCase::class),
+                    self::get($c, ExportImportJobUseCaseInterface::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
                 ExportImportJobCsvHandler::class,
                 static fn (ContainerInterface $c): ExportImportJobCsvHandler => new ExportImportJobCsvHandler(
-                    self::get($c, ExportImportJobUseCase::class),
+                    self::get($c, ExportImportJobUseCaseInterface::class),
                     self::get($c, ResponseFactoryInterface::class),
                     self::get($c, StreamFactoryInterface::class),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
                 ImportJobNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): ImportJobNotFoundExceptionHandler => new ImportJobNotFoundExceptionHandler(
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
+                ImportFileTooLargeExceptionHandler::class,
+                static fn (ContainerInterface $c): ImportFileTooLargeExceptionHandler => new ImportFileTooLargeExceptionHandler(
                     self::problemDetails($c),
                 ),
             )

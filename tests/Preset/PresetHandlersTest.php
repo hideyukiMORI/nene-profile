@@ -7,6 +7,7 @@ namespace NeneProfile\Tests\Preset;
 use Nene2\Routing\Router;
 use Nene2\Validation\ValidationException;
 use NeneProfile\Audit\AuditRecorder;
+use NeneProfile\Organization\OrganizationNotResolvedException;
 use NeneProfile\Preset\CreateMappingPresetHandler;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
 use NeneProfile\Preset\DeleteMappingPresetHandler;
@@ -56,7 +57,7 @@ final class PresetHandlersTest extends TestCase
     {
         $uc = new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
 
-        $handler = new CreateMappingPresetHandler($uc, $this->jsonFactory(), $this->problemFactory());
+        $handler = new CreateMappingPresetHandler($uc, $this->jsonFactory());
         $request = $this->withAuth(
             $this->jsonRequest('POST', '/admin/mapping-presets', [
                 'name'       => 'Test Preset',
@@ -79,7 +80,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new CreateMappingPresetHandler(
             new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/mapping-presets', [
@@ -100,17 +100,17 @@ final class PresetHandlersTest extends TestCase
 
     public function test_create_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new CreateMappingPresetHandler(
             new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->jsonRequest('POST', '/admin/mapping-presets', [
             'name' => 'X', 'bank_label' => 'Y', 'definition' => $this->minimalDefinition(),
         ]));
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_create_throws_validation_when_name_missing(): void
@@ -120,7 +120,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new CreateMappingPresetHandler(
             new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/mapping-presets', [
             'bank_label' => 'MUFG',
@@ -136,7 +135,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new CreateMappingPresetHandler(
             new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/mapping-presets', [
             'name'       => 'Preset',
@@ -152,7 +150,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new CreateMappingPresetHandler(
             new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/mapping-presets', [
             'name'       => 'Preset',
@@ -170,7 +167,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new GetMappingPresetByIdHandler(
             new GetMappingPresetByIdUseCase($this->presets, $this->versions),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', "/admin/mapping-presets/{$id}"))
@@ -187,10 +183,11 @@ final class PresetHandlersTest extends TestCase
 
     public function test_get_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new GetMappingPresetByIdHandler(
             new GetMappingPresetByIdUseCase($this->presets, $this->versions),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -198,7 +195,6 @@ final class PresetHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     // ── ListMappingPresetsHandler ─────────────────────────────────────────
@@ -211,7 +207,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new ListMappingPresetsHandler(
             new ListMappingPresetsUseCase($this->presets),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->withAuth($this->request('GET', '/admin/mapping-presets')));
@@ -233,7 +228,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new ListMappingPresetsHandler(
             new ListMappingPresetsUseCase($this->presets),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', '/admin/mapping-presets'))
@@ -255,7 +249,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new UpdateMappingPresetHandler(
             new UpdateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $newDef              = $this->minimalDefinition();
@@ -279,7 +272,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new UpdateMappingPresetHandler(
             new UpdateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth(
@@ -303,7 +295,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new DeleteMappingPresetHandler(
             new DeleteMappingPresetUseCase($this->presets, $this->audit),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('DELETE', "/admin/mapping-presets/{$id}"))
@@ -316,10 +307,11 @@ final class PresetHandlersTest extends TestCase
 
     public function test_delete_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new DeleteMappingPresetHandler(
             new DeleteMappingPresetUseCase($this->presets, $this->audit),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle(
@@ -327,7 +319,6 @@ final class PresetHandlersTest extends TestCase
                 ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']),
         );
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_delete_propagates_not_found(): void
@@ -337,7 +328,6 @@ final class PresetHandlersTest extends TestCase
         $handler = new DeleteMappingPresetHandler(
             new DeleteMappingPresetUseCase($this->presets, $this->audit),
             $this->psr17(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth($this->request('DELETE', '/admin/mapping-presets/999'))

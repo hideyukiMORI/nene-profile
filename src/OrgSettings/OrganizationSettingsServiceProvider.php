@@ -48,7 +48,6 @@ final readonly class OrganizationSettingsServiceProvider implements ServiceProvi
                 static fn (ContainerInterface $c): GetOrganizationSettingsHandler => new GetOrganizationSettingsHandler(
                     self::get($c, GetOrganizationSettingsUseCaseInterface::class),
                     self::get($c, JsonResponseFactory::class),
-                    self::get($c, ProblemDetailsResponseFactory::class),
                 ),
             )
             ->set(
@@ -56,7 +55,6 @@ final readonly class OrganizationSettingsServiceProvider implements ServiceProvi
                 static fn (ContainerInterface $c): UpdateOrganizationSettingsHandler => new UpdateOrganizationSettingsHandler(
                     self::get($c, UpdateOrganizationSettingsUseCaseInterface::class),
                     self::get($c, JsonResponseFactory::class),
-                    self::get($c, ProblemDetailsResponseFactory::class),
                 ),
             )
             ->set(

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\Tests\OrgSettings;
 
 use NeneProfile\Audit\AuditRecorder;
+use NeneProfile\Organization\OrganizationNotResolvedException;
 use NeneProfile\OrgSettings\GetOrganizationSettingsHandler;
 use NeneProfile\OrgSettings\GetOrganizationSettingsUseCase;
 use NeneProfile\OrgSettings\UpdateOrganizationSettingsHandler;
@@ -33,7 +34,6 @@ final class OrgSettingsHandlersTest extends TestCase
         $handler = new GetOrganizationSettingsHandler(
             new GetOrganizationSettingsUseCase($this->repo),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->withAuth($this->request('GET', '/admin/organization-settings')));
@@ -47,15 +47,15 @@ final class OrgSettingsHandlersTest extends TestCase
 
     public function test_get_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new GetOrganizationSettingsHandler(
             new GetOrganizationSettingsUseCase($this->repo),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->request('GET', '/admin/organization-settings'));
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     // ── UpdateOrganizationSettingsHandler ─────────────────────────────────
@@ -65,7 +65,6 @@ final class OrgSettingsHandlersTest extends TestCase
         $handler = new UpdateOrganizationSettingsHandler(
             new UpdateOrganizationSettingsUseCase($this->repo, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth(
@@ -83,15 +82,15 @@ final class OrgSettingsHandlersTest extends TestCase
 
     public function test_update_returns_400_without_org(): void
     {
+        $this->expectException(OrganizationNotResolvedException::class);
+
         $handler = new UpdateOrganizationSettingsHandler(
             new UpdateOrganizationSettingsUseCase($this->repo, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $response = $handler->handle($this->jsonRequest('PATCH', '/admin/organization-settings', []));
 
-        $this->assertSame(400, $response->getStatusCode());
     }
 
     public function test_update_returns_422_for_invalid_encoding(): void
@@ -101,7 +100,6 @@ final class OrgSettingsHandlersTest extends TestCase
         $handler = new UpdateOrganizationSettingsHandler(
             new UpdateOrganizationSettingsUseCase($this->repo, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth(
@@ -120,7 +118,6 @@ final class OrgSettingsHandlersTest extends TestCase
         $handler = new UpdateOrganizationSettingsHandler(
             new UpdateOrganizationSettingsUseCase($this->repo, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         $request = $this->withAuth(
@@ -137,7 +134,6 @@ final class OrgSettingsHandlersTest extends TestCase
         $handler = new UpdateOrganizationSettingsHandler(
             new UpdateOrganizationSettingsUseCase($this->repo, $this->audit),
             $this->jsonFactory(),
-            $this->problemFactory(),
         );
 
         // Empty JSON object {} — json_encode([]) produces array "[]", must use object

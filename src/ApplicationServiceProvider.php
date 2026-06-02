@@ -15,10 +15,12 @@ use NeneProfile\Auth\AuthRouteRegistrar;
 use NeneProfile\Auth\AuthServiceProvider;
 use NeneProfile\Auth\InvalidCredentialsExceptionHandler;
 use NeneProfile\Auth\InvalidCurrentPasswordExceptionHandler;
+use NeneProfile\ImportJob\ImportFileTooLargeExceptionHandler;
 use NeneProfile\ImportJob\ImportJobNotFoundExceptionHandler;
 use NeneProfile\ImportJob\ImportJobRouteRegistrar;
 use NeneProfile\ImportJob\ImportJobServiceProvider;
 use NeneProfile\Organization\OrganizationNotFoundExceptionHandler;
+use NeneProfile\Organization\OrganizationNotResolvedExceptionHandler;
 use NeneProfile\Organization\OrganizationRouteRegistrar;
 use NeneProfile\Organization\OrganizationServiceProvider;
 use NeneProfile\Organization\OrganizationSlugConflictExceptionHandler;
@@ -113,6 +115,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invalidCredentials        = $c->get(InvalidCredentialsExceptionHandler::class);
                     $invalidCurrentPassword    = $c->get(InvalidCurrentPasswordExceptionHandler::class);
                     $organizationNotFound      = $c->get(OrganizationNotFoundExceptionHandler::class);
+                    $organizationNotResolved   = $c->get(OrganizationNotResolvedExceptionHandler::class);
                     $organizationSlugConflict  = $c->get(OrganizationSlugConflictExceptionHandler::class);
                     $userNotFound              = $c->get(UserNotFoundExceptionHandler::class);
                     $userEmailConflict         = $c->get(UserEmailConflictExceptionHandler::class);
@@ -122,11 +125,13 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $presetNotFound            = $c->get(MappingPresetNotFoundExceptionHandler::class);
                     $invalidDefinition         = $c->get(InvalidMappingDefinitionExceptionHandler::class);
                     $importJobNotFound         = $c->get(ImportJobNotFoundExceptionHandler::class);
+                    $importFileTooLarge        = $c->get(ImportFileTooLargeExceptionHandler::class);
 
                     $handlers = [
                         $invalidCredentials,
                         $invalidCurrentPassword,
                         $organizationNotFound,
+                        $organizationNotResolved,
                         $organizationSlugConflict,
                         $userNotFound,
                         $userEmailConflict,
@@ -136,6 +141,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         $presetNotFound,
                         $invalidDefinition,
                         $importJobNotFound,
+                        $importFileTooLarge,
                     ];
 
                     foreach ($handlers as $handler) {

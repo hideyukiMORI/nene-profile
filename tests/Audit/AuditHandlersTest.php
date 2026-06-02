@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Audit;
 
+use Nene2\Validation\ValidationException;
 use NeneProfile\Audit\AuditRecorder;
 use NeneProfile\Audit\ListAuditLogsHandler;
 use NeneProfile\Audit\ListAuditLogsUseCase;
@@ -119,25 +120,20 @@ final class AuditHandlersTest extends TestCase
         $this->assertSame(25, $payload['total']);
     }
 
-    public function test_list_max_limit_is_100(): void
+    public function test_list_rejects_limit_above_max(): void
     {
-        for ($i = 0; $i < 110; $i++) {
-            $this->addLog();
-        }
-
         $handler = new ListAuditLogsHandler(
             new ListAuditLogsUseCase($this->repo),
             $this->jsonFactory(),
         );
 
         $request = $this->withAuth($this->request('GET', '/admin/audit-logs'))
-            ->withQueryParams(['limit' => '200']); // request more than max
+            ->withQueryParams(['limit' => '200']); // above the shared max of 100
 
-        $response = $handler->handle($request);
-        $payload  = $this->decodeJson($response);
-
-        $this->assertSame(100, $payload['limit']); // capped at 100
-        $this->assertCount(100, $payload['items']);
+        // Consistent with every other list endpoint: out-of-range pagination is a
+        // 422, not a silent clamp (Nene2\Http\PaginationQueryParser).
+        $this->expectException(ValidationException::class);
+        $handler->handle($request);
     }
 
     public function test_list_respects_offset(): void

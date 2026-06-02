@@ -6,8 +6,5 @@ namespace NeneProfile\Preset;
 
 interface UpdateMappingPresetUseCaseInterface
 {
-    /**
-     * @return array{preset: MappingPreset, version: ?MappingPresetVersion}
-     */
-    public function execute(?int $actorUserId, UpdateMappingPresetInput $input): array;
+    public function execute(?int $actorUserId, UpdateMappingPresetInput $input): UpdateMappingPresetOutput;
 }
