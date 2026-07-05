@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Preset;
 
+use Closure;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Routing\Router;
 use Nene2\Validation\ValidationException;
-use NeneProfile\Audit\AuditRecorder;
 use NeneProfile\Organization\OrganizationNotResolvedException;
 use NeneProfile\Preset\CreateMappingPresetHandler;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
@@ -16,10 +18,14 @@ use NeneProfile\Preset\GetMappingPresetByIdHandler;
 use NeneProfile\Preset\GetMappingPresetByIdUseCase;
 use NeneProfile\Preset\ListMappingPresetsHandler;
 use NeneProfile\Preset\ListMappingPresetsUseCase;
+use NeneProfile\Preset\MappingPresetRepositoryInterface;
+use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
 use NeneProfile\Preset\UpdateMappingPresetHandler;
 use NeneProfile\Preset\UpdateMappingPresetUseCase;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use PHPUnit\Framework\TestCase;
 
 final class PresetHandlersTest extends TestCase
@@ -28,13 +34,44 @@ final class PresetHandlersTest extends TestCase
 
     private InMemoryMappingPresetRepository $presets;
     private InMemoryMappingPresetVersionRepository $versions;
-    private AuditRecorder $audit;
+    private AuditRecorderFactoryInterface $audit;
 
     protected function setUp(): void
     {
         $this->presets  = new InMemoryMappingPresetRepository();
         $this->versions = new InMemoryMappingPresetVersionRepository();
-        $this->audit    = new AuditRecorder(new InMemoryAuditLogRepository());
+        $this->audit    = new InMemoryAuditRecorderFactory(new FixedClock());
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface */
+    private function presetsFactory(): Closure
+    {
+        $repo = $this->presets;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetRepositoryInterface => $repo;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): MappingPresetVersionRepositoryInterface */
+    private function versionsFactory(): Closure
+    {
+        $repo = $this->versions;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetVersionRepositoryInterface => $repo;
+    }
+
+    private function createPresetUseCase(): CreateMappingPresetUseCase
+    {
+        return new CreateMappingPresetUseCase(new ImmediateTransactionManager(), $this->presetsFactory(), $this->versionsFactory(), $this->audit);
+    }
+
+    private function updatePresetUseCase(): UpdateMappingPresetUseCase
+    {
+        return new UpdateMappingPresetUseCase($this->presets, $this->versions, new ImmediateTransactionManager(), $this->presetsFactory(), $this->versionsFactory(), $this->audit);
+    }
+
+    private function deletePresetUseCase(): DeleteMappingPresetUseCase
+    {
+        return new DeleteMappingPresetUseCase($this->presets, new ImmediateTransactionManager(), $this->presetsFactory(), $this->audit);
     }
 
     /** @return array<string, mixed> */
@@ -55,7 +92,7 @@ final class PresetHandlersTest extends TestCase
 
     private function createPreset(int $orgId = 1): int
     {
-        $uc = new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
+        $uc = $this->createPresetUseCase();
 
         $handler = new CreateMappingPresetHandler($uc, $this->jsonFactory());
         $request = $this->withAuth(
@@ -78,7 +115,7 @@ final class PresetHandlersTest extends TestCase
     public function test_create_returns_201_with_payload(): void
     {
         $handler = new CreateMappingPresetHandler(
-            new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
+            $this->createPresetUseCase(),
             $this->jsonFactory(),
         );
 
@@ -103,7 +140,7 @@ final class PresetHandlersTest extends TestCase
         $this->expectException(OrganizationNotResolvedException::class);
 
         $handler = new CreateMappingPresetHandler(
-            new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
+            $this->createPresetUseCase(),
             $this->jsonFactory(),
         );
 
@@ -118,7 +155,7 @@ final class PresetHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateMappingPresetHandler(
-            new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
+            $this->createPresetUseCase(),
             $this->jsonFactory(),
         );
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/mapping-presets', [
@@ -133,7 +170,7 @@ final class PresetHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateMappingPresetHandler(
-            new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
+            $this->createPresetUseCase(),
             $this->jsonFactory(),
         );
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/mapping-presets', [
@@ -148,7 +185,7 @@ final class PresetHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateMappingPresetHandler(
-            new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
+            $this->createPresetUseCase(),
             $this->jsonFactory(),
         );
         $request = $this->withAuth($this->jsonRequest('POST', '/admin/mapping-presets', [
@@ -247,7 +284,7 @@ final class PresetHandlersTest extends TestCase
         $id = $this->createPreset();
 
         $handler = new UpdateMappingPresetHandler(
-            new UpdateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
+            $this->updatePresetUseCase(),
             $this->jsonFactory(),
         );
 
@@ -270,7 +307,7 @@ final class PresetHandlersTest extends TestCase
         $id = $this->createPreset();
 
         $handler = new UpdateMappingPresetHandler(
-            new UpdateMappingPresetUseCase($this->presets, $this->versions, $this->audit),
+            $this->updatePresetUseCase(),
             $this->jsonFactory(),
         );
 
@@ -293,7 +330,7 @@ final class PresetHandlersTest extends TestCase
         $id = $this->createPreset();
 
         $handler = new DeleteMappingPresetHandler(
-            new DeleteMappingPresetUseCase($this->presets, $this->audit),
+            $this->deletePresetUseCase(),
             $this->psr17(),
         );
 
@@ -310,7 +347,7 @@ final class PresetHandlersTest extends TestCase
         $this->expectException(OrganizationNotResolvedException::class);
 
         $handler = new DeleteMappingPresetHandler(
-            new DeleteMappingPresetUseCase($this->presets, $this->audit),
+            $this->deletePresetUseCase(),
             $this->psr17(),
         );
 
@@ -326,7 +363,7 @@ final class PresetHandlersTest extends TestCase
         $this->expectException(\NeneProfile\Preset\MappingPresetNotFoundException::class);
 
         $handler = new DeleteMappingPresetHandler(
-            new DeleteMappingPresetUseCase($this->presets, $this->audit),
+            $this->deletePresetUseCase(),
             $this->psr17(),
         );
 

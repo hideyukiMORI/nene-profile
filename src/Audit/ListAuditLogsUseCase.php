@@ -4,27 +4,25 @@ declare(strict_types=1);
 
 namespace NeneProfile\Audit;
 
+use Nene2\Audit\AuditEventRepositoryInterface;
+use Nene2\Audit\AuditQuery;
+
 final readonly class ListAuditLogsUseCase implements ListAuditLogsUseCaseInterface
 {
     public function __construct(
-        private AuditLogRepositoryInterface $repository,
+        private AuditEventRepositoryInterface $repository,
     ) {
     }
 
     public function execute(ListAuditLogsInput $input): ListAuditLogsOutput
     {
-        if ($input->organizationId !== null) {
-            $items = $this->repository->findByOrganization($input->organizationId, $input->limit, $input->offset);
-            $total = $this->repository->countByOrganization($input->organizationId);
-        } else {
-            // superadmin: cross-org view
-            $items = $this->repository->findAll($input->limit, $input->offset);
-            $total = $this->repository->countAll();
-        }
+        // organizationId null means "no org filter": superadmin cross-org view.
+        // ListAuditLogsHandler resolves null vs. tenant-scoped by role.
+        $query = new AuditQuery(organizationId: $input->organizationId);
 
         return new ListAuditLogsOutput(
-            items: $items,
-            total: $total,
+            items: $this->repository->query($query, $input->limit, $input->offset),
+            total: $this->repository->count($query),
             limit: $input->limit,
             offset: $input->offset,
         );

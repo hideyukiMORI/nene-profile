@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NeneProfile\OrgSettings;
 
+use Closure;
 use LogicException;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneProfile\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 
 final readonly class OrganizationSettingsServiceProvider implements ServiceProviderInterface
@@ -40,7 +42,9 @@ final readonly class OrganizationSettingsServiceProvider implements ServiceProvi
                 UpdateOrganizationSettingsUseCaseInterface::class,
                 static fn (ContainerInterface $c): UpdateOrganizationSettingsUseCaseInterface => new UpdateOrganizationSettingsUseCase(
                     self::repo($c),
-                    self::get($c, AuditRecorderInterface::class),
+                    self::tx($c),
+                    self::settingsFactory(),
+                    self::audit($c),
                 ),
             )
             ->set(
@@ -75,6 +79,25 @@ final readonly class OrganizationSettingsServiceProvider implements ServiceProvi
     private static function repo(ContainerInterface $c): OrganizationSettingsRepositoryInterface
     {
         return self::get($c, OrganizationSettingsRepositoryInterface::class);
+    }
+
+    private static function tx(ContainerInterface $c): DatabaseTransactionManagerInterface
+    {
+        return self::get($c, DatabaseTransactionManagerInterface::class);
+    }
+
+    private static function audit(ContainerInterface $c): AuditRecorderFactoryInterface
+    {
+        return self::get($c, AuditRecorderFactoryInterface::class);
+    }
+
+    /**
+     * @return Closure(DatabaseQueryExecutorInterface): OrganizationSettingsRepositoryInterface
+     */
+    private static function settingsFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationSettingsRepositoryInterface
+            => new PdoOrganizationSettingsRepository($exec);
     }
 
     /**

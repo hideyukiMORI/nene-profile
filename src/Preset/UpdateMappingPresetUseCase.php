@@ -4,14 +4,25 @@ declare(strict_types=1);
 
 namespace NeneProfile\Preset;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 
 final readonly class UpdateMappingPresetUseCase implements UpdateMappingPresetUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface $presetsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): MappingPresetVersionRepositoryInterface $versionsFactory
+     */
     public function __construct(
         private MappingPresetRepositoryInterface $presets,
         private MappingPresetVersionRepositoryInterface $versions,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $presetsFactory,
+        private Closure $versionsFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
@@ -36,32 +47,37 @@ final readonly class UpdateMappingPresetUseCase implements UpdateMappingPresetUs
         $name = $input->name ?? $existing->name;
         $bankLabel = $input->bankLabel ?? $existing->bankLabel;
 
-        if ($input->name !== null || $input->bankLabel !== null) {
-            $this->presets->updateMetadata($input->id, $name, $bankLabel);
-        }
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input, $before, $name, $bankLabel): UpdateMappingPresetOutput {
+            $presets  = ($this->presetsFactory)($exec);
+            $versions = ($this->versionsFactory)($exec);
 
-        if ($input->definition !== null) {
-            $nextVersion = $this->versions->maxVersionNumber($input->id) + 1;
-            $versionId = $this->versions->append($input->id, $nextVersion, $input->definition);
-            $this->presets->setCurrentVersion($input->id, $versionId);
-        }
+            if ($input->name !== null || $input->bankLabel !== null) {
+                $presets->updateMetadata($input->id, $name, $bankLabel);
+            }
 
-        $updated = $this->presets->findByIdInOrganization($input->id, $input->organizationId);
-        assert($updated !== null);
-        $currentVersion = $updated->currentVersionId !== null
-            ? $this->versions->findById($updated->currentVersionId)
-            : null;
+            if ($input->definition !== null) {
+                $nextVersion = $versions->maxVersionNumber($input->id) + 1;
+                $versionId = $versions->append($input->id, $nextVersion, $input->definition);
+                $presets->setCurrentVersion($input->id, $versionId);
+            }
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $input->organizationId,
-            action: 'mapping_preset.updated',
-            entityType: 'mapping_preset',
-            entityId: $input->id,
-            before: $before,
-            after: MappingPresetSnapshot::toArray($updated, $currentVersion),
-        );
+            $updated = $presets->findByIdInOrganization($input->id, $input->organizationId);
+            assert($updated !== null);
+            $currentVersion = $updated->currentVersionId !== null
+                ? $versions->findById($updated->currentVersionId)
+                : null;
 
-        return new UpdateMappingPresetOutput(preset: $updated, version: $currentVersion);
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'mapping_preset.updated',
+                entityType: 'mapping_preset',
+                entityId: $input->id,
+                actorId: $actorUserId,
+                organizationId: $input->organizationId,
+                before: $before,
+                after: MappingPresetSnapshot::toArray($updated, $currentVersion),
+            ));
+
+            return new UpdateMappingPresetOutput(preset: $updated, version: $currentVersion);
+        });
     }
 }

@@ -4,27 +4,36 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\User;
 
-use NeneProfile\Audit\AuditRecorder;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use NeneProfile\User\CannotDeleteSelfException;
 use NeneProfile\User\DeleteUserInput;
 use NeneProfile\User\DeleteUserUseCase;
 use NeneProfile\User\User;
 use NeneProfile\User\UserNotFoundException;
+use NeneProfile\User\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class DeleteUserUseCaseTest extends TestCase
 {
     private InMemoryUserRepository $repo;
-    private InMemoryAuditLogRepository $auditRepo;
+    private InMemoryAuditRecorderFactory $auditRepo;
     private DeleteUserUseCase $useCase;
     private int $userId;
 
     protected function setUp(): void
     {
         $this->repo      = new InMemoryUserRepository();
-        $this->auditRepo = new InMemoryAuditLogRepository();
-        $this->useCase   = new DeleteUserUseCase($this->repo, new AuditRecorder($this->auditRepo));
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
+        $this->useCase   = new DeleteUserUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->usersFactory(),
+            $this->auditRepo,
+        );
 
         $this->userId = $this->repo->seed(new User(
             id: 0,
@@ -33,6 +42,14 @@ final class DeleteUserUseCaseTest extends TestCase
             role: 'member',
             organizationId: 7,
         ));
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface */
+    private function usersFactory(): Closure
+    {
+        $repo = $this->repo;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface => $repo;
     }
 
     public function test_deletes_user(): void
@@ -60,7 +77,7 @@ final class DeleteUserUseCaseTest extends TestCase
     {
         $this->useCase->execute(99, new DeleteUserInput($this->userId, 7));
 
-        $log = $this->auditRepo->all()[0];
+        $log = $this->auditRepo->appended[0];
         $this->assertSame('user.deleted', $log->action);
         $this->assertSame($this->userId, $log->entityId);
         $this->assertNotNull($log->before);
@@ -76,6 +93,6 @@ final class DeleteUserUseCaseTest extends TestCase
         } catch (CannotDeleteSelfException) {
         }
 
-        $this->assertCount(0, $this->auditRepo->all());
+        $this->assertCount(0, $this->auditRepo->appended);
     }
 }

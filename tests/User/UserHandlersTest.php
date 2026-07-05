@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\User;
 
+use Closure;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Routing\Router;
 use Nene2\Validation\ValidationException;
-use NeneProfile\Audit\AuditRecorder;
 use NeneProfile\Organization\OrganizationNotResolvedException;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use NeneProfile\User\CreateUserHandler;
 use NeneProfile\User\CreateUserUseCase;
 use NeneProfile\User\DeleteUserHandler;
@@ -21,6 +25,7 @@ use NeneProfile\User\ListUsersUseCase;
 use NeneProfile\User\UpdateUserHandler;
 use NeneProfile\User\UpdateUserUseCase;
 use NeneProfile\User\User;
+use NeneProfile\User\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class UserHandlersTest extends TestCase
@@ -28,12 +33,12 @@ final class UserHandlersTest extends TestCase
     use ProblemDetailsTestTrait;
 
     private InMemoryUserRepository $users;
-    private AuditRecorder $audit;
+    private AuditRecorderFactoryInterface $audit;
 
     protected function setUp(): void
     {
         $this->users = new InMemoryUserRepository();
-        $this->audit = new AuditRecorder(new InMemoryAuditLogRepository());
+        $this->audit = new InMemoryAuditRecorderFactory(new FixedClock());
     }
 
     private function savedUser(int $orgId = 1, string $role = 'member'): int
@@ -47,12 +52,35 @@ final class UserHandlersTest extends TestCase
         ));
     }
 
+    /** @return Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface */
+    private function usersFactory(): Closure
+    {
+        $repo = $this->users;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface => $repo;
+    }
+
+    private function createUserUseCase(): CreateUserUseCase
+    {
+        return new CreateUserUseCase($this->users, new ImmediateTransactionManager(), $this->usersFactory(), $this->audit);
+    }
+
+    private function updateUserUseCase(): UpdateUserUseCase
+    {
+        return new UpdateUserUseCase($this->users, new ImmediateTransactionManager(), $this->usersFactory(), $this->audit);
+    }
+
+    private function deleteUserUseCase(): DeleteUserUseCase
+    {
+        return new DeleteUserUseCase($this->users, new ImmediateTransactionManager(), $this->usersFactory(), $this->audit);
+    }
+
     // ── CreateUserHandler ─────────────────────────────────────────────────
 
     public function test_create_returns_201_with_snake_case_payload(): void
     {
         $handler = new CreateUserHandler(
-            new CreateUserUseCase($this->users, $this->audit),
+            $this->createUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -80,7 +108,7 @@ final class UserHandlersTest extends TestCase
         $this->expectException(OrganizationNotResolvedException::class);
 
         $handler = new CreateUserHandler(
-            new CreateUserUseCase($this->users, $this->audit),
+            $this->createUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -99,7 +127,7 @@ final class UserHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateUserHandler(
-            new CreateUserUseCase($this->users, $this->audit),
+            $this->createUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -115,7 +143,7 @@ final class UserHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateUserHandler(
-            new CreateUserUseCase($this->users, $this->audit),
+            $this->createUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -132,7 +160,7 @@ final class UserHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateUserHandler(
-            new CreateUserUseCase($this->users, $this->audit),
+            $this->createUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -147,7 +175,7 @@ final class UserHandlersTest extends TestCase
     public function test_create_accepts_password_exactly_8_chars(): void
     {
         $handler = new CreateUserHandler(
-            new CreateUserUseCase($this->users, $this->audit),
+            $this->createUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -167,7 +195,7 @@ final class UserHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateUserHandler(
-            new CreateUserUseCase($this->users, $this->audit),
+            $this->createUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -286,7 +314,7 @@ final class UserHandlersTest extends TestCase
         $id = $this->savedUser();
 
         $handler = new UpdateUserHandler(
-            new UpdateUserUseCase($this->users, $this->audit),
+            $this->updateUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -306,7 +334,7 @@ final class UserHandlersTest extends TestCase
         $this->expectException(OrganizationNotResolvedException::class);
 
         $handler = new UpdateUserHandler(
-            new UpdateUserUseCase($this->users, $this->audit),
+            $this->updateUserUseCase(),
             $this->jsonFactory(),
         );
 
@@ -331,7 +359,7 @@ final class UserHandlersTest extends TestCase
         $targetId = $this->savedUser();
 
         $handler = new DeleteUserHandler(
-            new DeleteUserUseCase($this->users, $this->audit),
+            $this->deleteUserUseCase(),
             $this->psr17(),
         );
 
@@ -348,7 +376,7 @@ final class UserHandlersTest extends TestCase
         $this->expectException(OrganizationNotResolvedException::class);
 
         $handler = new DeleteUserHandler(
-            new DeleteUserUseCase($this->users, $this->audit),
+            $this->deleteUserUseCase(),
             $this->psr17(),
         );
 
@@ -366,7 +394,7 @@ final class UserHandlersTest extends TestCase
         $id = $this->savedUser();
 
         $handler = new DeleteUserHandler(
-            new DeleteUserUseCase($this->users, $this->audit),
+            $this->deleteUserUseCase(),
             $this->psr17(),
         );
 

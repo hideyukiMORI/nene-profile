@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneProfile\Audit;
 
+use Nene2\Audit\AuditEvent;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\PaginationQueryParser;
 use Nene2\Http\PaginationResponse;
@@ -18,6 +19,9 @@ use Psr\Http\Message\ServerRequestInterface;
  * - superadmin: sees all logs across organizations (organizationId = null)
  * - admin / member: sees only their organization's logs
  * Capability: ManageUsers (gated in CapabilityResolver)
+ *
+ * Persistence is the framework's `Nene2\Audit\AuditEventRepositoryInterface`;
+ * the JSON shape below is unchanged from the pre-adoption `AuditLog` response.
  */
 final readonly class ListAuditLogsHandler
 {
@@ -41,16 +45,16 @@ final readonly class ListAuditLogsHandler
         ));
 
         return $this->response->create((new PaginationResponse(
-            items: array_map(static fn (AuditLog $log): array => [
-                'id'              => $log->id,
-                'actor_user_id'   => $log->actorUserId,
-                'organization_id' => $log->organizationId,
-                'action'          => $log->action,
-                'entity_type'     => $log->entityType,
-                'entity_id'       => $log->entityId,
-                'before'          => $log->before,
-                'after'           => $log->after,
-                'created_at'      => $log->createdAt,
+            items: array_map(static fn (AuditEvent $event): array => [
+                'id'              => $event->id,
+                'actor_user_id'   => $event->actorId,
+                'organization_id' => $event->organizationId,
+                'action'          => $event->action,
+                'entity_type'     => $event->entityType,
+                'entity_id'       => $event->entityId,
+                'before'          => $event->before,
+                'after'           => $event->after,
+                'created_at'      => $event->occurredAt,
             ], $output->items),
             limit: $output->limit,
             offset: $output->offset,

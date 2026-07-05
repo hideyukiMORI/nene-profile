@@ -4,26 +4,43 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\OrgSettings;
 
-use NeneProfile\Audit\AuditRecorder;
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use NeneProfile\OrgSettings\EncodingNotSupportedException;
 use NeneProfile\OrgSettings\OrganizationSettings;
+use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\OrgSettings\OrganizationSettingsSnapshot;
 use NeneProfile\OrgSettings\UpdateOrganizationSettingsInput;
 use NeneProfile\OrgSettings\UpdateOrganizationSettingsUseCase;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use PHPUnit\Framework\TestCase;
 
 final class UpdateOrganizationSettingsUseCaseTest extends TestCase
 {
     private InMemoryOrganizationSettingsRepository $repo;
-    private InMemoryAuditLogRepository $auditRepo;
+    private InMemoryAuditRecorderFactory $auditRepo;
     private UpdateOrganizationSettingsUseCase $useCase;
 
     protected function setUp(): void
     {
         $this->repo      = new InMemoryOrganizationSettingsRepository();
-        $this->auditRepo = new InMemoryAuditLogRepository();
-        $this->useCase   = new UpdateOrganizationSettingsUseCase($this->repo, new AuditRecorder($this->auditRepo));
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
+        $this->useCase   = new UpdateOrganizationSettingsUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->settingsFactory(),
+            $this->auditRepo,
+        );
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): OrganizationSettingsRepositoryInterface */
+    private function settingsFactory(): Closure
+    {
+        $repo = $this->repo;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationSettingsRepositoryInterface => $repo;
     }
 
     public function test_creates_settings_on_first_update(): void
@@ -114,7 +131,7 @@ final class UpdateOrganizationSettingsUseCaseTest extends TestCase
             clearBearerToken: 'top-secret-value',
         ));
 
-        $log = $this->auditRepo->all()[0];
+        $log = $this->auditRepo->appended[0];
         $this->assertSame('organization_settings.updated', $log->action);
         $encoded = json_encode([$log->before, $log->after]);
         $this->assertIsString($encoded);

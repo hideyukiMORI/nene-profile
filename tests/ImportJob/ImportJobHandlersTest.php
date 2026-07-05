@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\ImportJob;
 
+use Closure;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Routing\Router;
 use Nene2\Validation\ValidationException;
-use NeneProfile\Audit\AuditRecorder;
 use NeneProfile\ImportJob\CreateImportJobHandler;
 use NeneProfile\ImportJob\CreateImportJobUseCase;
 use NeneProfile\ImportJob\CsvParser;
@@ -18,6 +20,7 @@ use NeneProfile\ImportJob\GetImportJobUseCase;
 use NeneProfile\ImportJob\ImportFileTooLargeException;
 use NeneProfile\ImportJob\ImportJob;
 use NeneProfile\ImportJob\ImportJobError;
+use NeneProfile\ImportJob\ImportJobRepositoryInterface;
 use NeneProfile\ImportJob\ListImportJobErrorsHandler;
 use NeneProfile\ImportJob\ListImportJobErrorsUseCase;
 use NeneProfile\ImportJob\ListImportJobsHandler;
@@ -28,11 +31,15 @@ use NeneProfile\Organization\OrganizationNotResolvedException;
 use NeneProfile\OrgSettings\OrganizationSettings;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
 use NeneProfile\Preset\MappingDefinitionFactory;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Preset\MappingPresetRepositoryInterface;
+use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
 use NeneProfile\Tests\OrgSettings\InMemoryOrganizationSettingsRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetVersionRepository;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use NeneProfile\Transformer\TransformerRegistry;
 use Nyholm\Psr7\UploadedFile;
 use PHPUnit\Framework\TestCase;
@@ -45,7 +52,7 @@ final class ImportJobHandlersTest extends TestCase
     private InMemoryFileStorage $storage;
     private InMemoryMappingPresetRepository $presets;
     private InMemoryMappingPresetVersionRepository $versions;
-    private AuditRecorder $audit;
+    private AuditRecorderFactoryInterface $audit;
     private InMemoryOrganizationSettingsRepository $settings;
     private int $presetVersionId;
 
@@ -55,11 +62,11 @@ final class ImportJobHandlersTest extends TestCase
         $this->storage  = new InMemoryFileStorage();
         $this->presets  = new InMemoryMappingPresetRepository();
         $this->versions = new InMemoryMappingPresetVersionRepository();
-        $this->audit    = new AuditRecorder(new InMemoryAuditLogRepository());
+        $this->audit    = new InMemoryAuditRecorderFactory(new FixedClock());
         $this->settings = new InMemoryOrganizationSettingsRepository();
 
         // Seed a preset+version to use in tests
-        $uc  = new CreateMappingPresetUseCase($this->presets, $this->versions, $this->audit);
+        $uc  = new CreateMappingPresetUseCase(new ImmediateTransactionManager(), $this->presetsFactory(), $this->versionsFactory(), $this->audit);
         $def = MappingDefinitionFactory::fromArray([
             'encoding'         => 'auto',
             'delimiter'        => 'auto',
@@ -78,6 +85,46 @@ final class ImportJobHandlersTest extends TestCase
             definition: $def,
         ));
         $this->presetVersionId = $result->version->id;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): ImportJobRepositoryInterface */
+    private function jobsFactory(): Closure
+    {
+        $repo = $this->jobs;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): ImportJobRepositoryInterface => $repo;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface */
+    private function presetsFactory(): Closure
+    {
+        $repo = $this->presets;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetRepositoryInterface => $repo;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): MappingPresetVersionRepositoryInterface */
+    private function versionsFactory(): Closure
+    {
+        $repo = $this->versions;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetVersionRepositoryInterface => $repo;
+    }
+
+    private function createImportJobUseCase(): CreateImportJobUseCase
+    {
+        return new CreateImportJobUseCase(
+            $this->jobs,
+            $this->presets,
+            $this->versions,
+            $this->storage,
+            new CsvParser(),
+            new NormalizationRunner(new TransformerRegistry()),
+            new ImmediateTransactionManager(),
+            $this->jobsFactory(),
+            $this->audit,
+            $this->settings,
+        );
     }
 
     private function savedJob(int $orgId = 1, string $status = ImportJob::STATUS_COMPLETED): int
@@ -345,16 +392,7 @@ final class ImportJobHandlersTest extends TestCase
         $this->expectException(OrganizationNotResolvedException::class);
 
         $handler = new CreateImportJobHandler(
-            new CreateImportJobUseCase(
-                $this->jobs,
-                $this->presets,
-                $this->versions,
-                $this->storage,
-                new CsvParser(),
-                new NormalizationRunner(new TransformerRegistry()),
-                $this->audit,
-                $this->settings,
-            ),
+            $this->createImportJobUseCase(),
             $this->jsonFactory(),
         );
 
@@ -367,16 +405,7 @@ final class ImportJobHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateImportJobHandler(
-            new CreateImportJobUseCase(
-                $this->jobs,
-                $this->presets,
-                $this->versions,
-                $this->storage,
-                new CsvParser(),
-                new NormalizationRunner(new TransformerRegistry()),
-                $this->audit,
-                $this->settings,
-            ),
+            $this->createImportJobUseCase(),
             $this->jsonFactory(),
         );
 
@@ -391,16 +420,7 @@ final class ImportJobHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateImportJobHandler(
-            new CreateImportJobUseCase(
-                $this->jobs,
-                $this->presets,
-                $this->versions,
-                $this->storage,
-                new CsvParser(),
-                new NormalizationRunner(new TransformerRegistry()),
-                $this->audit,
-                $this->settings,
-            ),
+            $this->createImportJobUseCase(),
             $this->jsonFactory(),
         );
 
@@ -423,16 +443,7 @@ final class ImportJobHandlersTest extends TestCase
         $this->settings->upsert(new OrganizationSettings(organizationId: 1, maxFileSizeBytes: 4));
 
         $handler = new CreateImportJobHandler(
-            new CreateImportJobUseCase(
-                $this->jobs,
-                $this->presets,
-                $this->versions,
-                $this->storage,
-                new CsvParser(),
-                new NormalizationRunner(new TransformerRegistry()),
-                $this->audit,
-                $this->settings,
-            ),
+            $this->createImportJobUseCase(),
             $this->jsonFactory(),
         );
 

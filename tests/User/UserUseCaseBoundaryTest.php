@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\User;
 
-use NeneProfile\Audit\AuditRecorder;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use Closure;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use NeneProfile\User\CreateUserInput;
 use NeneProfile\User\CreateUserUseCase;
 use NeneProfile\User\DeleteUserInput;
@@ -20,17 +24,41 @@ use NeneProfile\User\UpdateUserUseCase;
 use NeneProfile\User\User;
 use NeneProfile\User\UserEmailConflictException;
 use NeneProfile\User\UserNotFoundException;
+use NeneProfile\User\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class UserUseCaseBoundaryTest extends TestCase
 {
     private InMemoryUserRepository $users;
-    private AuditRecorder $audit;
+    private AuditRecorderFactoryInterface $audit;
 
     protected function setUp(): void
     {
         $this->users = new InMemoryUserRepository();
-        $this->audit = new AuditRecorder(new InMemoryAuditLogRepository());
+        $this->audit = new InMemoryAuditRecorderFactory(new FixedClock());
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface */
+    private function usersFactory(): Closure
+    {
+        $repo = $this->users;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface => $repo;
+    }
+
+    private function createUserUseCase(): CreateUserUseCase
+    {
+        return new CreateUserUseCase($this->users, new ImmediateTransactionManager(), $this->usersFactory(), $this->audit);
+    }
+
+    private function updateUserUseCase(): UpdateUserUseCase
+    {
+        return new UpdateUserUseCase($this->users, new ImmediateTransactionManager(), $this->usersFactory(), $this->audit);
+    }
+
+    private function deleteUserUseCase(): DeleteUserUseCase
+    {
+        return new DeleteUserUseCase($this->users, new ImmediateTransactionManager(), $this->usersFactory(), $this->audit);
     }
 
     private static int $userCounter = 0;
@@ -58,7 +86,7 @@ final class UserUseCaseBoundaryTest extends TestCase
     {
         $this->expectException(RoleNotAssignableException::class);
 
-        (new CreateUserUseCase($this->users, $this->audit))->execute(
+        ($this->createUserUseCase())->execute(
             1,
             1,
             new CreateUserInput(email: 'admin@example.com', password: 'password', role: 'superadmin'),
@@ -69,7 +97,7 @@ final class UserUseCaseBoundaryTest extends TestCase
     {
         $this->expectException(RoleNotAssignableException::class);
 
-        (new CreateUserUseCase($this->users, $this->audit))->execute(
+        ($this->createUserUseCase())->execute(
             1,
             1,
             new CreateUserInput(email: 'a@example.com', password: 'password', role: 'god'),
@@ -80,14 +108,14 @@ final class UserUseCaseBoundaryTest extends TestCase
     {
         $this->expectException(UserEmailConflictException::class);
 
-        $uc = new CreateUserUseCase($this->users, $this->audit);
+        $uc = $this->createUserUseCase();
         $uc->execute(1, 1, new CreateUserInput(email: 'dup@example.com', password: 'password', role: 'member'));
         $uc->execute(1, 1, new CreateUserInput(email: 'dup@example.com', password: 'password2', role: 'admin'));
     }
 
     public function test_create_accepts_all_non_superadmin_roles(): void
     {
-        $uc = new CreateUserUseCase($this->users, $this->audit);
+        $uc = $this->createUserUseCase();
 
         foreach (['admin', 'member', 'viewer'] as $i => $role) {
             $user = $uc->execute(1, 1, new CreateUserInput(
@@ -185,7 +213,7 @@ final class UserUseCaseBoundaryTest extends TestCase
 
         $user = $this->savedUser();
 
-        (new UpdateUserUseCase($this->users, $this->audit))->execute(
+        ($this->updateUserUseCase())->execute(
             1,
             new UpdateUserInput(id: $user->id, organizationId: 1, role: 'superadmin'),
         );
@@ -197,7 +225,7 @@ final class UserUseCaseBoundaryTest extends TestCase
 
         $user = $this->savedUser(orgId: 1);
 
-        (new UpdateUserUseCase($this->users, $this->audit))->execute(
+        ($this->updateUserUseCase())->execute(
             1,
             new UpdateUserInput(id: $user->id, organizationId: 2, role: 'admin'),
         );
@@ -207,7 +235,7 @@ final class UserUseCaseBoundaryTest extends TestCase
     {
         $user = $this->savedUser();
 
-        $updated = (new UpdateUserUseCase($this->users, $this->audit))->execute(
+        $updated = ($this->updateUserUseCase())->execute(
             1,
             new UpdateUserInput(id: $user->id, organizationId: 1, role: null, status: null, password: null),
         );
@@ -223,7 +251,7 @@ final class UserUseCaseBoundaryTest extends TestCase
 
         $user = $this->savedUser(orgId: 1);
 
-        (new DeleteUserUseCase($this->users, $this->audit))->execute(
+        ($this->deleteUserUseCase())->execute(
             999,
             new DeleteUserInput($user->id, organizationId: 2),
         );
@@ -233,7 +261,7 @@ final class UserUseCaseBoundaryTest extends TestCase
     {
         $this->expectException(UserNotFoundException::class);
 
-        (new DeleteUserUseCase($this->users, $this->audit))->execute(
+        ($this->deleteUserUseCase())->execute(
             1,
             new DeleteUserInput(99999, organizationId: 1),
         );

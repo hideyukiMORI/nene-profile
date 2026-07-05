@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace NeneProfile\Preset;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 
 final readonly class DeleteMappingPresetUseCase implements DeleteMappingPresetUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface $presetsFactory
+     */
     public function __construct(
         private MappingPresetRepositoryInterface $presets,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $presetsFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
@@ -28,16 +37,20 @@ final readonly class DeleteMappingPresetUseCase implements DeleteMappingPresetUs
 
         $before = MappingPresetSnapshot::toArray($existing);
 
-        $this->presets->softDelete($input->id);
+        $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input, $before): void {
+            $presets = ($this->presetsFactory)($exec);
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $input->organizationId,
-            action: 'mapping_preset.deleted',
-            entityType: 'mapping_preset',
-            entityId: $input->id,
-            before: $before,
-            after: null,
-        );
+            $presets->softDelete($input->id);
+
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'mapping_preset.deleted',
+                entityType: 'mapping_preset',
+                entityId: $input->id,
+                actorId: $actorUserId,
+                organizationId: $input->organizationId,
+                before: $before,
+                after: null,
+            ));
+        });
     }
 }

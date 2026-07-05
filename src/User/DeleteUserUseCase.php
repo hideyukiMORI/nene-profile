@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace NeneProfile\User;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 
 final readonly class DeleteUserUseCase implements DeleteUserUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface $usersFactory
+     */
     public function __construct(
         private UserRepositoryInterface $users,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $usersFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
@@ -28,16 +37,20 @@ final readonly class DeleteUserUseCase implements DeleteUserUseCaseInterface
 
         $before = UserSnapshot::toArray($existing);
 
-        $this->users->delete($input->id);
+        $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input, $before): void {
+            $users = ($this->usersFactory)($exec);
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $input->organizationId,
-            action: 'user.deleted',
-            entityType: 'user',
-            entityId: $input->id,
-            before: $before,
-            after: null,
-        );
+            $users->delete($input->id);
+
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'user.deleted',
+                entityType: 'user',
+                entityId: $input->id,
+                actorId: $actorUserId,
+                organizationId: $input->organizationId,
+                before: $before,
+                after: null,
+            ));
+        });
     }
 }

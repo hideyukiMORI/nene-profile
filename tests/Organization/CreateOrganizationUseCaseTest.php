@@ -4,24 +4,39 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Organization;
 
-use NeneProfile\Audit\AuditRecorder;
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use NeneProfile\Organization\CreateOrganizationInput;
 use NeneProfile\Organization\CreateOrganizationUseCase;
+use NeneProfile\Organization\OrganizationRepositoryInterface;
 use NeneProfile\Organization\OrganizationSlugConflictException;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use PHPUnit\Framework\TestCase;
 
 final class CreateOrganizationUseCaseTest extends TestCase
 {
     private InMemoryOrganizationRepository $repo;
-    private InMemoryAuditLogRepository $auditRepo;
+    private InMemoryAuditRecorderFactory $auditRepo;
     private CreateOrganizationUseCase $useCase;
 
     protected function setUp(): void
     {
         $this->repo      = new InMemoryOrganizationRepository();
-        $this->auditRepo = new InMemoryAuditLogRepository();
-        $this->useCase   = new CreateOrganizationUseCase($this->repo, new AuditRecorder($this->auditRepo));
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
+        $this->useCase   = new CreateOrganizationUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->organizationsFactory($this->repo),
+            $this->auditRepo,
+        );
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface */
+    private function organizationsFactory(OrganizationRepositoryInterface $repo): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface => $repo;
     }
 
     public function test_creates_organization_and_returns_output(): void
@@ -71,7 +86,7 @@ final class CreateOrganizationUseCaseTest extends TestCase
     {
         $output = $this->useCase->execute(42, new CreateOrganizationInput(name: 'Audited Org', slug: 'audited'));
 
-        $logs = $this->auditRepo->all();
+        $logs = $this->auditRepo->appended;
         $this->assertCount(1, $logs);
 
         $log = $logs[0];
@@ -79,7 +94,7 @@ final class CreateOrganizationUseCaseTest extends TestCase
         $this->assertSame('organization', $log->entityType);
         $this->assertSame($output->id, $log->entityId);
         $this->assertSame($output->id, $log->organizationId);
-        $this->assertSame(42, $log->actorUserId);
+        $this->assertSame(42, $log->actorId);
         $this->assertNull($log->before);
         $this->assertNotNull($log->after);
         $this->assertSame('audited', $log->after['slug']);
@@ -89,7 +104,7 @@ final class CreateOrganizationUseCaseTest extends TestCase
     {
         $this->useCase->execute(1, new CreateOrganizationInput(name: 'Org', slug: 'org'));
 
-        $log = $this->auditRepo->all()[0];
+        $log = $this->auditRepo->appended[0];
         $this->assertArrayNotHasKey('password_hash', $log->after ?? []);
     }
 }

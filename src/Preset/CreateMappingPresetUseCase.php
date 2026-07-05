@@ -4,44 +4,58 @@ declare(strict_types=1);
 
 namespace NeneProfile\Preset;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 
 final readonly class CreateMappingPresetUseCase implements CreateMappingPresetUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface $presetsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): MappingPresetVersionRepositoryInterface $versionsFactory
+     */
     public function __construct(
-        private MappingPresetRepositoryInterface $presets,
-        private MappingPresetVersionRepositoryInterface $versions,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $presetsFactory,
+        private Closure $versionsFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
     public function execute(?int $actorUserId, CreateMappingPresetInput $input): CreateMappingPresetOutput
     {
-        $presetId = $this->presets->save(new MappingPreset(
-            id: 0,
-            organizationId: $input->organizationId,
-            name: $input->name,
-            bankLabel: $input->bankLabel,
-        ));
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input): CreateMappingPresetOutput {
+            $presets  = ($this->presetsFactory)($exec);
+            $versions = ($this->versionsFactory)($exec);
 
-        $versionId = $this->versions->append($presetId, 1, $input->definition);
-        $this->presets->setCurrentVersion($presetId, $versionId);
+            $presetId = $presets->save(new MappingPreset(
+                id: 0,
+                organizationId: $input->organizationId,
+                name: $input->name,
+                bankLabel: $input->bankLabel,
+            ));
 
-        $preset = $this->presets->findByIdInOrganization($presetId, $input->organizationId);
-        assert($preset !== null);
-        $version = $this->versions->findById($versionId);
-        assert($version !== null);
+            $versionId = $versions->append($presetId, 1, $input->definition);
+            $presets->setCurrentVersion($presetId, $versionId);
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $input->organizationId,
-            action: 'mapping_preset.created',
-            entityType: 'mapping_preset',
-            entityId: $presetId,
-            before: null,
-            after: MappingPresetSnapshot::toArray($preset, $version),
-        );
+            $preset = $presets->findByIdInOrganization($presetId, $input->organizationId);
+            assert($preset !== null);
+            $version = $versions->findById($versionId);
+            assert($version !== null);
 
-        return new CreateMappingPresetOutput(preset: $preset, version: $version);
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'mapping_preset.created',
+                entityType: 'mapping_preset',
+                entityId: $presetId,
+                actorId: $actorUserId,
+                organizationId: $input->organizationId,
+                before: null,
+                after: MappingPresetSnapshot::toArray($preset, $version),
+            ));
+
+            return new CreateMappingPresetOutput(preset: $preset, version: $version);
+        });
     }
 }

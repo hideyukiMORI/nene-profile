@@ -2,7 +2,8 @@
 
 ## Status
 
-accepted
+accepted — write/read mechanism superseded by ADR 0012 (schema, action
+naming, and sanitization rules below are unchanged and still apply)
 
 ## Context
 
@@ -47,16 +48,18 @@ A dedicated `audit_logs` table records one row per mutating operation.
 
 ### Recording rules
 
-- **Recording happens in the UseCase** via `Audit\AuditRecorderInterface`.
-  Use cases receive the actor user ID and organization ID through their execute
-  signature.
+- **Recording happens in the UseCase** via `Nene2\Audit\AuditRecorderFactoryInterface`
+  (ADR 0012). Use cases receive the actor user ID and organization ID through
+  their execute signature.
 - **Before/after snapshots are sanitized arrays** — all public non-secret fields
   of the entity. Secrets (e.g. `password_hash`) are **never** included.
 - **All create / update / delete operations** record an entry. Reads are not
   audited.
-- **Sync, best-effort**: recording is synchronous after the mutation but not in
-  the same DB transaction. A crash between mutation and audit write could drop
-  one entry — acceptable for MVP. A future ADR may make mutation + audit atomic.
+- **Atomic with the mutation** (ADR 0012): the audit write and the business
+  mutation run in the same DB transaction via `DatabaseTransactionManagerInterface`,
+  so both commit or both roll back. The one exception is `CreateImportJobUseCase`'s
+  CSV parse/normalize phase, which stays outside any transaction by design
+  (ADR 0004) — its parse-failure branch was never audited and still isn't.
 - **Append-only**: no UPDATE or DELETE on `audit_logs` rows.
 
 ### Action naming convention
@@ -105,13 +108,12 @@ consistent with NeNe Invoice's convention.
 
 **Costs / limitations**
 
-- Use cases gain an `AuditRecorderInterface` dependency and actor parameters.
-- Sync best-effort: a crash between mutation and audit write could drop an entry.
+- Use cases gain an `AuditRecorderFactoryInterface` dependency and actor parameters.
 
 **Follow-up**
 
-- Wrap mutation + audit in one DB transaction when `DatabaseTransactionManagerInterface`
-  is introduced to use cases.
+- ~~Wrap mutation + audit in one DB transaction when `DatabaseTransactionManagerInterface`
+  is introduced to use cases.~~ Done — see ADR 0012.
 - Add `GET /admin/audit-logs` pagination and filtering by `entity_type` or date range.
 
 ## Related

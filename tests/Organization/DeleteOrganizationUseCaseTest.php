@@ -4,33 +4,51 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Organization;
 
-use NeneProfile\Audit\AuditRecorder;
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use NeneProfile\Organization\CreateOrganizationInput;
 use NeneProfile\Organization\CreateOrganizationUseCase;
 use NeneProfile\Organization\DeleteOrganizationInput;
 use NeneProfile\Organization\DeleteOrganizationUseCase;
 use NeneProfile\Organization\OrganizationNotFoundException;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Organization\OrganizationRepositoryInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use PHPUnit\Framework\TestCase;
 
 final class DeleteOrganizationUseCaseTest extends TestCase
 {
     private InMemoryOrganizationRepository $repo;
-    private InMemoryAuditLogRepository $auditRepo;
-    private AuditRecorder $audit;
+    private InMemoryAuditRecorderFactory $auditRepo;
     private DeleteOrganizationUseCase $useCase;
 
     protected function setUp(): void
     {
         $this->repo      = new InMemoryOrganizationRepository();
-        $this->auditRepo = new InMemoryAuditLogRepository();
-        $this->audit     = new AuditRecorder($this->auditRepo);
-        $this->useCase   = new DeleteOrganizationUseCase($this->repo, $this->audit);
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
+        $this->useCase   = new DeleteOrganizationUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->organizationsFactory($this->repo),
+            $this->auditRepo,
+        );
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface */
+    private function organizationsFactory(OrganizationRepositoryInterface $repo): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface => $repo;
     }
 
     private function createOrg(string $name, string $slug): int
     {
-        $createUseCase = new CreateOrganizationUseCase($this->repo, $this->audit);
+        $createUseCase = new CreateOrganizationUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->organizationsFactory($this->repo),
+            $this->auditRepo,
+        );
 
         return $createUseCase->execute(null, new CreateOrganizationInput($name, $slug))->id;
     }
@@ -49,18 +67,23 @@ final class DeleteOrganizationUseCaseTest extends TestCase
         $id = $this->createOrg('Doomed Org', 'doomed');
 
         // Reset audit to isolate delete event
-        $this->auditRepo = new InMemoryAuditLogRepository();
-        $this->useCase   = new DeleteOrganizationUseCase($this->repo, new AuditRecorder($this->auditRepo));
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
+        $this->useCase   = new DeleteOrganizationUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->organizationsFactory($this->repo),
+            $this->auditRepo,
+        );
 
         $this->useCase->execute(5, new DeleteOrganizationInput($id));
 
-        $logs = $this->auditRepo->all();
+        $logs = $this->auditRepo->appended;
         $this->assertCount(1, $logs);
 
         $log = $logs[0];
         $this->assertSame('organization.deleted', $log->action);
         $this->assertSame($id, $log->entityId);
-        $this->assertSame(5, $log->actorUserId);
+        $this->assertSame(5, $log->actorId);
         $this->assertNotNull($log->before);
         $this->assertSame('doomed', $log->before['slug']);
         $this->assertNull($log->after);
@@ -80,6 +103,6 @@ final class DeleteOrganizationUseCaseTest extends TestCase
         } catch (OrganizationNotFoundException) {
         }
 
-        $this->assertCount(0, $this->auditRepo->all());
+        $this->assertCount(0, $this->auditRepo->appended);
     }
 }

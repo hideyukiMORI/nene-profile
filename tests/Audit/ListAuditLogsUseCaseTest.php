@@ -4,28 +4,30 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Audit;
 
-use NeneProfile\Audit\AuditLog;
+use Nene2\Audit\AuditEvent;
 use NeneProfile\Audit\ListAuditLogsInput;
 use NeneProfile\Audit\ListAuditLogsUseCase;
+use NeneProfile\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class ListAuditLogsUseCaseTest extends TestCase
 {
-    private InMemoryAuditLogRepository $repo;
+    private InMemoryAuditRecorderFactory $repo;
     private ListAuditLogsUseCase $useCase;
 
     protected function setUp(): void
     {
-        $this->repo    = new InMemoryAuditLogRepository();
+        $this->repo    = new InMemoryAuditRecorderFactory(new FixedClock());
         $this->useCase = new ListAuditLogsUseCase($this->repo);
     }
 
     private function seed(string $action, ?int $organizationId): void
     {
-        $this->repo->append(new AuditLog(
+        $this->repo->append(new AuditEvent(
             action: $action,
             entityType: 'organization',
             organizationId: $organizationId,
+            occurredAt: '2026-07-05 00:00:00',
         ));
     }
 
@@ -39,8 +41,8 @@ final class ListAuditLogsUseCaseTest extends TestCase
 
         $this->assertSame(2, $output->total);
         $this->assertCount(2, $output->items);
-        foreach ($output->items as $log) {
-            $this->assertSame(7, $log->organizationId);
+        foreach ($output->items as $event) {
+            $this->assertSame(7, $event->organizationId);
         }
     }
 

@@ -4,26 +4,43 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\User;
 
-use NeneProfile\Audit\AuditRecorder;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use NeneProfile\User\CreateUserInput;
 use NeneProfile\User\CreateUserUseCase;
 use NeneProfile\User\RoleNotAssignableException;
 use NeneProfile\User\User;
 use NeneProfile\User\UserEmailConflictException;
+use NeneProfile\User\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class CreateUserUseCaseTest extends TestCase
 {
     private InMemoryUserRepository $repo;
-    private InMemoryAuditLogRepository $auditRepo;
+    private InMemoryAuditRecorderFactory $auditRepo;
     private CreateUserUseCase $useCase;
 
     protected function setUp(): void
     {
         $this->repo      = new InMemoryUserRepository();
-        $this->auditRepo = new InMemoryAuditLogRepository();
-        $this->useCase   = new CreateUserUseCase($this->repo, new AuditRecorder($this->auditRepo));
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
+        $this->useCase   = new CreateUserUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->usersFactory(),
+            $this->auditRepo,
+        );
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface */
+    private function usersFactory(): Closure
+    {
+        $repo = $this->repo;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface => $repo;
     }
 
     public function test_creates_user_scoped_to_organization(): void
@@ -100,12 +117,12 @@ final class CreateUserUseCaseTest extends TestCase
             role: 'member',
         ));
 
-        $log = $this->auditRepo->all()[0];
+        $log = $this->auditRepo->appended[0];
         $this->assertSame('user.created', $log->action);
         $this->assertSame('user', $log->entityType);
         $this->assertSame($user->id, $log->entityId);
         $this->assertSame(7, $log->organizationId);
-        $this->assertSame(99, $log->actorUserId);
+        $this->assertSame(99, $log->actorId);
         $this->assertNull($log->before);
         $this->assertNotNull($log->after);
         $this->assertArrayNotHasKey('password_hash', $log->after);

@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Organization;
 
+use Closure;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Routing\Router;
 use Nene2\Validation\ValidationException;
-use NeneProfile\Audit\AuditRecorder;
 use NeneProfile\Organization\CreateOrganizationHandler;
 use NeneProfile\Organization\CreateOrganizationUseCase;
 use NeneProfile\Organization\DeleteOrganizationHandler;
 use NeneProfile\Organization\DeleteOrganizationUseCase;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Organization\OrganizationRepositoryInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use PHPUnit\Framework\TestCase;
 
 final class OrganizationCreateDeleteHandlersTest extends TestCase
@@ -20,12 +25,40 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
     use ProblemDetailsTestTrait;
 
     private InMemoryOrganizationRepository $repo;
-    private AuditRecorder $audit;
+    private AuditRecorderFactoryInterface $audit;
 
     protected function setUp(): void
     {
         $this->repo  = new InMemoryOrganizationRepository();
-        $this->audit = new AuditRecorder(new InMemoryAuditLogRepository());
+        $this->audit = new InMemoryAuditRecorderFactory(new FixedClock());
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface */
+    private function organizationsFactory(): Closure
+    {
+        $repo = $this->repo;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface => $repo;
+    }
+
+    private function createUseCase(): CreateOrganizationUseCase
+    {
+        return new CreateOrganizationUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->organizationsFactory(),
+            $this->audit,
+        );
+    }
+
+    private function deleteUseCase(): DeleteOrganizationUseCase
+    {
+        return new DeleteOrganizationUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->organizationsFactory(),
+            $this->audit,
+        );
     }
 
     // ── CreateOrganizationHandler ─────────────────────────────────────────
@@ -33,7 +66,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
     public function test_create_returns_201_with_payload(): void
     {
         $handler = new CreateOrganizationHandler(
-            new CreateOrganizationUseCase($this->repo, $this->audit),
+            $this->createUseCase(),
             $this->jsonFactory(),
         );
 
@@ -61,7 +94,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateOrganizationHandler(
-            new CreateOrganizationUseCase($this->repo, $this->audit),
+            $this->createUseCase(),
             $this->jsonFactory(),
         );
 
@@ -77,7 +110,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateOrganizationHandler(
-            new CreateOrganizationUseCase($this->repo, $this->audit),
+            $this->createUseCase(),
             $this->jsonFactory(),
         );
 
@@ -93,7 +126,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateOrganizationHandler(
-            new CreateOrganizationUseCase($this->repo, $this->audit),
+            $this->createUseCase(),
             $this->jsonFactory(),
         );
 
@@ -112,7 +145,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $handler = new CreateOrganizationHandler(
-            new CreateOrganizationUseCase($this->repo, $this->audit),
+            $this->createUseCase(),
             $this->jsonFactory(),
         );
 
@@ -129,7 +162,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
     public function test_create_accepts_is_active_false(): void
     {
         $handler = new CreateOrganizationHandler(
-            new CreateOrganizationUseCase($this->repo, $this->audit),
+            $this->createUseCase(),
             $this->jsonFactory(),
         );
 
@@ -152,7 +185,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
     public function test_create_accepts_custom_domain(): void
     {
         $handler = new CreateOrganizationHandler(
-            new CreateOrganizationUseCase($this->repo, $this->audit),
+            $this->createUseCase(),
             $this->jsonFactory(),
         );
 
@@ -182,7 +215,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
         ));
 
         $handler = new DeleteOrganizationHandler(
-            new DeleteOrganizationUseCase($this->repo, $this->audit),
+            $this->deleteUseCase(),
             $this->psr17(),
         );
 
@@ -199,7 +232,7 @@ final class OrganizationCreateDeleteHandlersTest extends TestCase
         $this->expectException(\NeneProfile\Organization\OrganizationNotFoundException::class);
 
         $handler = new DeleteOrganizationHandler(
-            new DeleteOrganizationUseCase($this->repo, $this->audit),
+            $this->deleteUseCase(),
             $this->psr17(),
         );
 
