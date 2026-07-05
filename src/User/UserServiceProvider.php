@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NeneProfile\User;
 
+use Closure;
 use LogicException;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneProfile\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 
@@ -47,6 +49,8 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 CreateUserUseCaseInterface::class,
                 static fn (ContainerInterface $c): CreateUserUseCaseInterface => new CreateUserUseCase(
                     self::repo($c),
+                    self::tx($c),
+                    self::usersFactory(),
                     self::audit($c),
                 ),
             )
@@ -54,6 +58,8 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 UpdateUserUseCaseInterface::class,
                 static fn (ContainerInterface $c): UpdateUserUseCaseInterface => new UpdateUserUseCase(
                     self::repo($c),
+                    self::tx($c),
+                    self::usersFactory(),
                     self::audit($c),
                 ),
             )
@@ -61,6 +67,8 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 DeleteUserUseCaseInterface::class,
                 static fn (ContainerInterface $c): DeleteUserUseCaseInterface => new DeleteUserUseCase(
                     self::repo($c),
+                    self::tx($c),
+                    self::usersFactory(),
                     self::audit($c),
                 ),
             )
@@ -140,9 +148,23 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
         return self::get($c, UserRepositoryInterface::class);
     }
 
-    private static function audit(ContainerInterface $c): AuditRecorderInterface
+    private static function tx(ContainerInterface $c): DatabaseTransactionManagerInterface
     {
-        return self::get($c, AuditRecorderInterface::class);
+        return self::get($c, DatabaseTransactionManagerInterface::class);
+    }
+
+    private static function audit(ContainerInterface $c): AuditRecorderFactoryInterface
+    {
+        return self::get($c, AuditRecorderFactoryInterface::class);
+    }
+
+    /**
+     * @return Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface
+     */
+    private static function usersFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface
+            => new PdoUserRepository($exec);
     }
 
     private static function json(ContainerInterface $c): JsonResponseFactory

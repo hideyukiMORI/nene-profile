@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NeneProfile\Preset;
 
+use Closure;
 use LogicException;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneProfile\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 
@@ -59,9 +61,10 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
             ->set(
                 CreateMappingPresetUseCaseInterface::class,
                 static fn (ContainerInterface $c): CreateMappingPresetUseCaseInterface => new CreateMappingPresetUseCase(
-                    self::presetRepo($c),
-                    self::versionRepo($c),
-                    self::get($c, AuditRecorderInterface::class),
+                    self::tx($c),
+                    self::presetsFactory(),
+                    self::versionsFactory(),
+                    self::audit($c),
                 ),
             )
             ->set(
@@ -69,14 +72,19 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 static fn (ContainerInterface $c): UpdateMappingPresetUseCaseInterface => new UpdateMappingPresetUseCase(
                     self::presetRepo($c),
                     self::versionRepo($c),
-                    self::get($c, AuditRecorderInterface::class),
+                    self::tx($c),
+                    self::presetsFactory(),
+                    self::versionsFactory(),
+                    self::audit($c),
                 ),
             )
             ->set(
                 DeleteMappingPresetUseCaseInterface::class,
                 static fn (ContainerInterface $c): DeleteMappingPresetUseCaseInterface => new DeleteMappingPresetUseCase(
                     self::presetRepo($c),
-                    self::get($c, AuditRecorderInterface::class),
+                    self::tx($c),
+                    self::presetsFactory(),
+                    self::audit($c),
                 ),
             )
             ->set(
@@ -146,6 +154,34 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
     private static function versionRepo(ContainerInterface $c): MappingPresetVersionRepositoryInterface
     {
         return self::get($c, MappingPresetVersionRepositoryInterface::class);
+    }
+
+    private static function tx(ContainerInterface $c): DatabaseTransactionManagerInterface
+    {
+        return self::get($c, DatabaseTransactionManagerInterface::class);
+    }
+
+    private static function audit(ContainerInterface $c): AuditRecorderFactoryInterface
+    {
+        return self::get($c, AuditRecorderFactoryInterface::class);
+    }
+
+    /**
+     * @return Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface
+     */
+    private static function presetsFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetRepositoryInterface
+            => new PdoMappingPresetRepository($exec);
+    }
+
+    /**
+     * @return Closure(DatabaseQueryExecutorInterface): MappingPresetVersionRepositoryInterface
+     */
+    private static function versionsFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetVersionRepositoryInterface
+            => new PdoMappingPresetVersionRepository($exec);
     }
 
     private static function json(ContainerInterface $c): JsonResponseFactory

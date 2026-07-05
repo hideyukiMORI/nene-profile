@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace NeneProfile\ImportJob;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use NeneProfile\OrgSettings\OrganizationSettings;
 use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\Preset\MappingPresetNotFoundException;
@@ -22,9 +26,20 @@ use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
  *
  * The original file hash is computed on the raw bytes and recorded on the job,
  * so any output row can later be re-verified against the stored original.
+ *
+ * Steps 1-3 (and the parse-failure branch of step 4) run outside a database
+ * transaction by design (ADR 0004: the original file + its initial job row must
+ * be durable *before* the potentially slow parse/normalize work starts, so a
+ * crash mid-parse still leaves a recoverable "running" job). Only the terminal
+ * write of step 4 (row/error persistence + status flip) and the step 5 audit
+ * record are wrapped in one transaction, so the job never finishes without a
+ * matching audit entry (or vice versa).
  */
 final readonly class CreateImportJobUseCase implements CreateImportJobUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): ImportJobRepositoryInterface $jobsFactory
+     */
     public function __construct(
         private ImportJobRepositoryInterface $jobs,
         private MappingPresetRepositoryInterface $presets,
@@ -32,7 +47,9 @@ final readonly class CreateImportJobUseCase implements CreateImportJobUseCaseInt
         private FileStorageInterface $storage,
         private CsvParser $parser,
         private NormalizationRunner $runner,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $jobsFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private OrganizationSettingsRepositoryInterface $settings,
     ) {
     }
@@ -80,6 +97,8 @@ final readonly class CreateImportJobUseCase implements CreateImportJobUseCaseInt
         ));
 
         // Parse + normalize. A whole-file parse failure marks the job failed.
+        // Not audited (pre-existing behavior): only a completed run records an
+        // audit event.
         try {
             $parsed = $this->parser->parse($input->fileContents, $version->definition);
         } catch (CsvParseException $e) {
@@ -89,38 +108,42 @@ final readonly class CreateImportJobUseCase implements CreateImportJobUseCaseInt
             )]);
             $this->jobs->complete($jobId, ImportJob::STATUS_FAILED, 0, 1);
 
-            return $this->finish($jobId, $input->organizationId);
+            return $this->finish($this->jobs, $jobId, $input->organizationId);
         }
 
         $result = $this->runner->run($parsed, $version->definition);
 
-        $this->jobs->appendTransactions($jobId, $result->transactions);
-        $this->jobs->appendErrors($jobId, $result->errors);
-        $this->jobs->complete(
-            $jobId,
-            $result->deriveStatus(),
-            count($result->transactions),
-            count($result->errors),
-        );
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($input, $jobId, $result): ImportJob {
+            $jobs = ($this->jobsFactory)($exec);
 
-        $job = $this->finish($jobId, $input->organizationId);
+            $jobs->appendTransactions($jobId, $result->transactions);
+            $jobs->appendErrors($jobId, $result->errors);
+            $jobs->complete(
+                $jobId,
+                $result->deriveStatus(),
+                count($result->transactions),
+                count($result->errors),
+            );
 
-        $this->audit->record(
-            actorUserId: $input->actorUserId,
-            organizationId: $input->organizationId,
-            action: 'import_job.' . ($result->hasErrors() ? 'completed_with_errors' : 'completed'),
-            entityType: 'import_job',
-            entityId: $jobId,
-            before: null,
-            after: ImportJobSnapshot::toArray($job),
-        );
+            $job = $this->finish($jobs, $jobId, $input->organizationId);
 
-        return $job;
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'import_job.' . ($result->hasErrors() ? 'completed_with_errors' : 'completed'),
+                entityType: 'import_job',
+                entityId: $jobId,
+                actorId: $input->actorUserId,
+                organizationId: $input->organizationId,
+                before: null,
+                after: ImportJobSnapshot::toArray($job),
+            ));
+
+            return $job;
+        });
     }
 
-    private function finish(int $jobId, int $organizationId): ImportJob
+    private function finish(ImportJobRepositoryInterface $jobs, int $jobId, int $organizationId): ImportJob
     {
-        $job = $this->jobs->findByIdInOrganization($jobId, $organizationId);
+        $job = $jobs->findByIdInOrganization($jobId, $organizationId);
         assert($job !== null);
 
         return $job;

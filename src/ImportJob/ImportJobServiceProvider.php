@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NeneProfile\ImportJob;
 
+use Closure;
 use LogicException;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneProfile\Audit\AuditRecorderInterface;
 use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\Preset\MappingPresetRepositoryInterface;
 use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
@@ -62,7 +64,9 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                     self::get($c, FileStorageInterface::class),
                     self::get($c, CsvParser::class),
                     self::get($c, NormalizationRunner::class),
-                    self::get($c, AuditRecorderInterface::class),
+                    self::get($c, DatabaseTransactionManagerInterface::class),
+                    self::jobsFactory(),
+                    self::get($c, AuditRecorderFactoryInterface::class),
                     self::get($c, OrganizationSettingsRepositoryInterface::class),
                 ),
             )
@@ -166,6 +170,15 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
     private static function problemDetails(ContainerInterface $c): ProblemDetailsResponseFactory
     {
         return self::get($c, ProblemDetailsResponseFactory::class);
+    }
+
+    /**
+     * @return Closure(DatabaseQueryExecutorInterface): ImportJobRepositoryInterface
+     */
+    private static function jobsFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): ImportJobRepositoryInterface
+            => new PdoImportJobRepository($exec);
     }
 
     /**

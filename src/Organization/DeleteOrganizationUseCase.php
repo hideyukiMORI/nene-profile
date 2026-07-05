@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace NeneProfile\Organization;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 
 final readonly class DeleteOrganizationUseCase implements DeleteOrganizationUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface $organizationsFactory
+     */
     public function __construct(
         private OrganizationRepositoryInterface $organizations,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $organizationsFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
@@ -24,16 +33,20 @@ final readonly class DeleteOrganizationUseCase implements DeleteOrganizationUseC
 
         $snapshot = OrganizationSnapshot::toArray($org);
 
-        $this->organizations->delete($input->id);
+        $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input, $snapshot): void {
+            $organizations = ($this->organizationsFactory)($exec);
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $input->id,
-            action: 'organization.deleted',
-            entityType: 'organization',
-            entityId: $input->id,
-            before: $snapshot,
-            after: null,
-        );
+            $organizations->delete($input->id);
+
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'organization.deleted',
+                entityType: 'organization',
+                entityId: $input->id,
+                actorId: $actorUserId,
+                organizationId: $input->id,
+                before: $snapshot,
+                after: null,
+            ));
+        });
     }
 }

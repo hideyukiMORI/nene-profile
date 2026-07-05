@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\ImportJob;
 
-use NeneProfile\Audit\AuditRecorder;
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use NeneProfile\ImportJob\CreateImportJobInput;
 use NeneProfile\ImportJob\CreateImportJobUseCase;
 use NeneProfile\ImportJob\CsvParser;
 use NeneProfile\ImportJob\ImportJob;
+use NeneProfile\ImportJob\ImportJobRepositoryInterface;
 use NeneProfile\ImportJob\NormalizationRunner;
 use NeneProfile\Preset\CreateMappingPresetInput;
 use NeneProfile\Preset\CreateMappingPresetUseCase;
 use NeneProfile\Preset\MappingDefinitionFactory;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use NeneProfile\Preset\MappingPresetRepositoryInterface;
+use NeneProfile\Preset\MappingPresetVersionRepositoryInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
 use NeneProfile\Tests\OrgSettings\InMemoryOrganizationSettingsRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetRepository;
 use NeneProfile\Tests\Preset\InMemoryMappingPresetVersionRepository;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use NeneProfile\Transformer\TransformerRegistry;
 use PHPUnit\Framework\TestCase;
 
@@ -26,7 +32,7 @@ final class CreateImportJobUseCaseTest extends TestCase
     private InMemoryMappingPresetRepository $presets;
     private InMemoryMappingPresetVersionRepository $versions;
     private InMemoryFileStorage $storage;
-    private InMemoryAuditLogRepository $auditRepo;
+    private InMemoryAuditRecorderFactory $auditRepo;
     private CreateImportJobUseCase $useCase;
     private int $presetId;
 
@@ -36,10 +42,15 @@ final class CreateImportJobUseCaseTest extends TestCase
         $this->presets   = new InMemoryMappingPresetRepository();
         $this->versions  = new InMemoryMappingPresetVersionRepository();
         $this->storage   = new InMemoryFileStorage();
-        $this->auditRepo = new InMemoryAuditLogRepository();
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
 
         // Seed a preset (org 7) with a MUFG-like definition.
-        $createPreset = new CreateMappingPresetUseCase($this->presets, $this->versions, new AuditRecorder(new InMemoryAuditLogRepository()));
+        $createPreset = new CreateMappingPresetUseCase(
+            new ImmediateTransactionManager(),
+            $this->presetsFactory(),
+            $this->versionsFactory(),
+            new InMemoryAuditRecorderFactory(new FixedClock()),
+        );
         $created = $createPreset->execute(1, new CreateMappingPresetInput(
             organizationId: 7,
             name: 'MUFG',
@@ -63,9 +74,35 @@ final class CreateImportJobUseCaseTest extends TestCase
             $this->storage,
             new CsvParser(),
             new NormalizationRunner(new TransformerRegistry()),
-            new AuditRecorder($this->auditRepo),
+            new ImmediateTransactionManager(),
+            $this->jobsFactory(),
+            $this->auditRepo,
             new InMemoryOrganizationSettingsRepository(),
         );
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): ImportJobRepositoryInterface */
+    private function jobsFactory(): Closure
+    {
+        $repo = $this->jobs;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): ImportJobRepositoryInterface => $repo;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface */
+    private function presetsFactory(): Closure
+    {
+        $repo = $this->presets;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetRepositoryInterface => $repo;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): MappingPresetVersionRepositoryInterface */
+    private function versionsFactory(): Closure
+    {
+        $repo = $this->versions;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetVersionRepositoryInterface => $repo;
     }
 
     private function input(string $csv): CreateImportJobInput
@@ -112,12 +149,12 @@ final class CreateImportJobUseCaseTest extends TestCase
         $csv = "日付,入金,出金,摘要\n2026/05/15,100000,,振込\n";
         $job = $this->useCase->execute($this->input($csv));
 
-        $log = $this->auditRepo->all()[0];
+        $log = $this->auditRepo->appended[0];
         $this->assertSame('import_job.completed', $log->action);
         $this->assertSame('import_job', $log->entityType);
         $this->assertSame($job->id, $log->entityId);
         $this->assertSame(7, $log->organizationId);
-        $this->assertSame(1, $log->actorUserId);
+        $this->assertSame(1, $log->actorId);
     }
 
     public function test_unparseable_file_marks_job_failed(): void

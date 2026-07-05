@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace NeneProfile\Organization;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 
 final readonly class UpdateOrganizationUseCase implements UpdateOrganizationUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface $organizationsFactory
+     */
     public function __construct(
         private OrganizationRepositoryInterface $organizations,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $organizationsFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
@@ -40,21 +49,25 @@ final readonly class UpdateOrganizationUseCase implements UpdateOrganizationUseC
             createdAt: $org->createdAt,
         );
 
-        $this->organizations->update($updated);
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input, $before, $updated): Organization {
+            $organizations = ($this->organizationsFactory)($exec);
 
-        $result = $this->organizations->findById($input->id);
-        assert($result !== null);
+            $organizations->update($updated);
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $input->id,
-            action: 'organization.update',
-            entityType: 'organization',
-            entityId: $input->id,
-            before: $before,
-            after: OrganizationSnapshot::toArray($result),
-        );
+            $result = $organizations->findById($input->id);
+            assert($result !== null);
 
-        return $result;
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'organization.update',
+                entityType: 'organization',
+                entityId: $input->id,
+                actorId: $actorUserId,
+                organizationId: $input->id,
+                before: $before,
+                after: OrganizationSnapshot::toArray($result),
+            ));
+
+            return $result;
+        });
     }
 }

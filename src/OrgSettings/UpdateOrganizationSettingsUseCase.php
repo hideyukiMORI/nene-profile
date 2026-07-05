@@ -4,15 +4,24 @@ declare(strict_types=1);
 
 namespace NeneProfile\OrgSettings;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 
 final readonly class UpdateOrganizationSettingsUseCase implements UpdateOrganizationSettingsUseCaseInterface
 {
     private const SUPPORTED_ENCODINGS = ['auto', 'utf-8', 'shift_jis'];
 
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): OrganizationSettingsRepositoryInterface $settingsFactory
+     */
     public function __construct(
         private OrganizationSettingsRepositoryInterface $repository,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $settingsFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
@@ -34,21 +43,25 @@ final readonly class UpdateOrganizationSettingsUseCase implements UpdateOrganiza
             clearBearerToken: $input->clearBearerTokenProvided ? $input->clearBearerToken : $current->clearBearerToken,
         );
 
-        $this->repository->upsert($updated);
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input, $before, $updated): OrganizationSettings {
+            $repository = ($this->settingsFactory)($exec);
 
-        $persisted = $this->repository->findByOrganizationId($input->organizationId);
-        assert($persisted !== null);
+            $repository->upsert($updated);
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $input->organizationId,
-            action: 'organization_settings.updated',
-            entityType: 'organization_settings',
-            entityId: $input->organizationId,
-            before: $before,
-            after: OrganizationSettingsSnapshot::toArray($persisted),
-        );
+            $persisted = $repository->findByOrganizationId($input->organizationId);
+            assert($persisted !== null);
 
-        return $persisted;
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'organization_settings.updated',
+                entityType: 'organization_settings',
+                entityId: $input->organizationId,
+                actorId: $actorUserId,
+                organizationId: $input->organizationId,
+                before: $before,
+                after: OrganizationSettingsSnapshot::toArray($persisted),
+            ));
+
+            return $persisted;
+        });
     }
 }

@@ -4,27 +4,36 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\User;
 
-use NeneProfile\Audit\AuditRecorder;
-use NeneProfile\Tests\Audit\InMemoryAuditLogRepository;
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use NeneProfile\Tests\Audit\InMemoryAuditRecorderFactory;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\ImmediateTransactionManager;
 use NeneProfile\User\RoleNotAssignableException;
 use NeneProfile\User\UpdateUserInput;
 use NeneProfile\User\UpdateUserUseCase;
 use NeneProfile\User\User;
 use NeneProfile\User\UserNotFoundException;
+use NeneProfile\User\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
 
 final class UpdateUserUseCaseTest extends TestCase
 {
     private InMemoryUserRepository $repo;
-    private InMemoryAuditLogRepository $auditRepo;
+    private InMemoryAuditRecorderFactory $auditRepo;
     private UpdateUserUseCase $useCase;
     private int $userId;
 
     protected function setUp(): void
     {
         $this->repo      = new InMemoryUserRepository();
-        $this->auditRepo = new InMemoryAuditLogRepository();
-        $this->useCase   = new UpdateUserUseCase($this->repo, new AuditRecorder($this->auditRepo));
+        $this->auditRepo = new InMemoryAuditRecorderFactory(new FixedClock());
+        $this->useCase   = new UpdateUserUseCase(
+            $this->repo,
+            new ImmediateTransactionManager(),
+            $this->usersFactory(),
+            $this->auditRepo,
+        );
 
         $this->userId = $this->repo->seed(new User(
             id: 0,
@@ -34,6 +43,14 @@ final class UpdateUserUseCaseTest extends TestCase
             organizationId: 7,
             status: 'active',
         ));
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface */
+    private function usersFactory(): Closure
+    {
+        $repo = $this->repo;
+
+        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface => $repo;
     }
 
     public function test_updates_role(): void
@@ -88,7 +105,7 @@ final class UpdateUserUseCaseTest extends TestCase
             role: 'viewer',
         ));
 
-        $log = $this->auditRepo->all()[0];
+        $log = $this->auditRepo->appended[0];
         $this->assertSame('user.updated', $log->action);
         $this->assertNotNull($log->before);
         $this->assertNotNull($log->after);

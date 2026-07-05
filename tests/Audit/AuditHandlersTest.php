@@ -4,36 +4,38 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Audit;
 
+use Nene2\Audit\AuditEvent;
 use Nene2\Validation\ValidationException;
-use NeneProfile\Audit\AuditRecorder;
 use NeneProfile\Audit\ListAuditLogsHandler;
 use NeneProfile\Audit\ListAuditLogsUseCase;
 use NeneProfile\Tests\Http\ProblemDetailsTestTrait;
+use NeneProfile\Tests\Support\FixedClock;
+use NeneProfile\Tests\Support\NullQueryExecutor;
 use PHPUnit\Framework\TestCase;
 
 final class AuditHandlersTest extends TestCase
 {
     use ProblemDetailsTestTrait;
 
-    private InMemoryAuditLogRepository $repo;
+    private InMemoryAuditRecorderFactory $repo;
 
     protected function setUp(): void
     {
-        $this->repo = new InMemoryAuditLogRepository();
+        $this->repo = new InMemoryAuditRecorderFactory(new FixedClock());
     }
 
     private function addLog(int $orgId = 1, string $action = 'organization.create'): void
     {
-        $recorder = new AuditRecorder($this->repo);
-        $recorder->record(
-            actorUserId: 1,
-            organizationId: $orgId,
+        $recorder = $this->repo->forExecutor(new NullQueryExecutor());
+        $recorder->record(new AuditEvent(
             action: $action,
             entityType: 'organization',
             entityId: 1,
+            actorId: 1,
+            organizationId: $orgId,
             before: null,
             after: ['id' => 1],
-        );
+        ));
     }
 
     public function test_list_returns_paginated_envelope(): void

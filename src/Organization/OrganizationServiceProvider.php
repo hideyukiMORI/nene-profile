@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NeneProfile\Organization;
 
+use Closure;
 use LogicException;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneProfile\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 
@@ -57,37 +59,21 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
             )
             ->set(
                 CreateOrganizationUseCaseInterface::class,
-                static function (ContainerInterface $c): CreateOrganizationUseCaseInterface {
-                    $repo  = $c->get(OrganizationRepositoryInterface::class);
-                    $audit = $c->get(AuditRecorderInterface::class);
-
-                    if (!$repo instanceof OrganizationRepositoryInterface) {
-                        throw new LogicException('Organization repository service is invalid.');
-                    }
-
-                    if (!$audit instanceof AuditRecorderInterface) {
-                        throw new LogicException('Audit recorder service is invalid.');
-                    }
-
-                    return new CreateOrganizationUseCase($repo, $audit);
-                },
+                static fn (ContainerInterface $c): CreateOrganizationUseCaseInterface => new CreateOrganizationUseCase(
+                    self::repo($c),
+                    self::tx($c),
+                    self::organizationsFactory(),
+                    self::audit($c),
+                ),
             )
             ->set(
                 DeleteOrganizationUseCaseInterface::class,
-                static function (ContainerInterface $c): DeleteOrganizationUseCaseInterface {
-                    $repo  = $c->get(OrganizationRepositoryInterface::class);
-                    $audit = $c->get(AuditRecorderInterface::class);
-
-                    if (!$repo instanceof OrganizationRepositoryInterface) {
-                        throw new LogicException('Organization repository service is invalid.');
-                    }
-
-                    if (!$audit instanceof AuditRecorderInterface) {
-                        throw new LogicException('Audit recorder service is invalid.');
-                    }
-
-                    return new DeleteOrganizationUseCase($repo, $audit);
-                },
+                static fn (ContainerInterface $c): DeleteOrganizationUseCaseInterface => new DeleteOrganizationUseCase(
+                    self::repo($c),
+                    self::tx($c),
+                    self::organizationsFactory(),
+                    self::audit($c),
+                ),
             )
             ->set(
                 ListOrganizationsHandler::class,
@@ -142,20 +128,12 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
             )
             ->set(
                 UpdateOrganizationUseCaseInterface::class,
-                static function (ContainerInterface $c): UpdateOrganizationUseCaseInterface {
-                    $orgs  = $c->get(OrganizationRepositoryInterface::class);
-                    $audit = $c->get(AuditRecorderInterface::class);
-
-                    if (!$orgs instanceof OrganizationRepositoryInterface) {
-                        throw new LogicException('OrganizationRepository service is invalid.');
-                    }
-
-                    if (!$audit instanceof AuditRecorderInterface) {
-                        throw new LogicException('AuditRecorder service is invalid.');
-                    }
-
-                    return new UpdateOrganizationUseCase($orgs, $audit);
-                },
+                static fn (ContainerInterface $c): UpdateOrganizationUseCaseInterface => new UpdateOrganizationUseCase(
+                    self::repo($c),
+                    self::tx($c),
+                    self::organizationsFactory(),
+                    self::audit($c),
+                ),
             )
             ->set(
                 UpdateOrganizationHandler::class,
@@ -259,5 +237,47 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                     return new OrganizationRouteRegistrar($list, $get, $create, $update, $delete);
                 },
             );
+    }
+
+    private static function repo(ContainerInterface $c): OrganizationRepositoryInterface
+    {
+        $repo = $c->get(OrganizationRepositoryInterface::class);
+
+        if (!$repo instanceof OrganizationRepositoryInterface) {
+            throw new LogicException('Organization repository service is invalid.');
+        }
+
+        return $repo;
+    }
+
+    private static function tx(ContainerInterface $c): DatabaseTransactionManagerInterface
+    {
+        $tx = $c->get(DatabaseTransactionManagerInterface::class);
+
+        if (!$tx instanceof DatabaseTransactionManagerInterface) {
+            throw new LogicException('Database transaction manager service is invalid.');
+        }
+
+        return $tx;
+    }
+
+    private static function audit(ContainerInterface $c): AuditRecorderFactoryInterface
+    {
+        $audit = $c->get(AuditRecorderFactoryInterface::class);
+
+        if (!$audit instanceof AuditRecorderFactoryInterface) {
+            throw new LogicException('Audit recorder factory service is invalid.');
+        }
+
+        return $audit;
+    }
+
+    /**
+     * @return Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface
+     */
+    private static function organizationsFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface
+            => new PdoOrganizationRepository($exec);
     }
 }

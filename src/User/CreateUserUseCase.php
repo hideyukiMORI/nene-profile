@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace NeneProfile\User;
 
-use NeneProfile\Audit\AuditRecorderInterface;
+use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use NeneProfile\Auth\Role;
 
 final readonly class CreateUserUseCase implements CreateUserUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface $usersFactory
+     */
     public function __construct(
         private UserRepositoryInterface $users,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $usersFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
     ) {
     }
 
@@ -32,28 +41,32 @@ final readonly class CreateUserUseCase implements CreateUserUseCaseInterface
             throw new UserEmailConflictException($input->email);
         }
 
-        $id = $this->users->save(new User(
-            id: 0,
-            email: $input->email,
-            passwordHash: password_hash($input->password, PASSWORD_BCRYPT),
-            role: $role->value,
-            organizationId: $organizationId,
-            status: 'active',
-        ));
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($organizationId, $actorUserId, $role, $input): User {
+            $users = ($this->usersFactory)($exec);
 
-        $created = $this->users->findById($id);
-        assert($created !== null);
+            $id = $users->save(new User(
+                id: 0,
+                email: $input->email,
+                passwordHash: password_hash($input->password, PASSWORD_BCRYPT),
+                role: $role->value,
+                organizationId: $organizationId,
+                status: 'active',
+            ));
 
-        $this->audit->record(
-            actorUserId: $actorUserId,
-            organizationId: $organizationId,
-            action: 'user.created',
-            entityType: 'user',
-            entityId: $id,
-            before: null,
-            after: UserSnapshot::toArray($created),
-        );
+            $created = $users->findById($id);
+            assert($created !== null);
 
-        return $created;
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'user.created',
+                entityType: 'user',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: UserSnapshot::toArray($created),
+            ));
+
+            return $created;
+        });
     }
 }
