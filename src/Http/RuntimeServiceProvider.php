@@ -29,6 +29,9 @@ use Nene2\Http\RuntimeApplicationFactory;
 use Nene2\Http\UtcClock;
 use Nene2\Log\MonologLoggerFactory;
 use Nene2\Log\RequestIdHolder;
+use Nene2\Middleware\InMemoryRateLimitStorage;
+use Nene2\Middleware\RateLimitStorageInterface;
+use Nene2\Middleware\ThrottleMiddleware;
 use NeneProfile\ApplicationServiceProvider;
 use NeneProfile\Auth\AdminApiAuthMiddleware;
 use NeneProfile\Auth\CapabilityMiddleware;
@@ -260,6 +263,36 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                RateLimitStorageInterface::class,
+                static fn (ContainerInterface $c): RateLimitStorageInterface => new InMemoryRateLimitStorage(),
+            )
+            ->set(
+                ThrottleMiddleware::class,
+                static function (ContainerInterface $c): ThrottleMiddleware {
+                    $problemDetails = $c->get(ProblemDetailsResponseFactory::class);
+                    $storage        = $c->get(RateLimitStorageInterface::class);
+
+                    if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('ProblemDetailsResponseFactory service is invalid.');
+                    }
+
+                    if (!$storage instanceof RateLimitStorageInterface) {
+                        throw new LogicException('Rate limit storage service is invalid.');
+                    }
+
+                    // 120 requests per minute per IP for the authenticated admin API.
+                    // The bundled in-memory storage does not share state across PHP-FPM
+                    // workers; production must inject a shared (Redis/DB) storage via
+                    // RateLimitStorageInterface so the limit is enforced fleet-wide.
+                    return new ThrottleMiddleware(
+                        $problemDetails,
+                        $storage,
+                        limit: 120,
+                        windowSeconds: 60,
+                    );
+                },
+            )
+            ->set(
                 RuntimeApplicationFactory::class,
                 static function (ContainerInterface $c): RuntimeApplicationFactory {
                     $rf               = $c->get(ResponseFactoryInterface::class);
@@ -274,6 +307,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                     $orgRepo          = $c->get(OrganizationRepositoryInterface::class);
                     $orgIdHolder      = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
                     $dbHealthCheck    = $c->get(DatabaseHealthCheck::class);
+                    $throttle         = $c->get(ThrottleMiddleware::class);
 
                     if (!$rf instanceof ResponseFactoryInterface) {
                         throw new LogicException('Response factory service is invalid.');
@@ -323,6 +357,10 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         throw new LogicException('DatabaseHealthCheck service is invalid.');
                     }
 
+                    if (!$throttle instanceof ThrottleMiddleware) {
+                        throw new LogicException('ThrottleMiddleware service is invalid.');
+                    }
+
                     /** @var RequestScopedHolder<int> $orgIdHolder */
                     /** @var list<DomainExceptionHandlerInterface> $exceptionHandlers */
                     /** @var list<callable(\Nene2\Routing\Router): void> $routeRegistrars */
@@ -353,6 +391,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         routeRegistrars:       $routeRegistrars,
                         authMiddleware:        $authMiddleware,
                         healthChecks:          [$dbHealthCheck],
+                        throttleMiddleware:    $throttle,
                         debug:                 $config->debug,
                         requestMaxBodyBytes:   10 * 1024 * 1024, // 10 MiB for CSV uploads
                     );
