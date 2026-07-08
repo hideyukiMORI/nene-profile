@@ -8,6 +8,7 @@ use NeneProfile\ImportJob\ImportJob;
 use NeneProfile\ImportJob\ImportJobError;
 use NeneProfile\ImportJob\NormalizedTransaction;
 use NeneProfile\ImportJob\PdoImportJobRepository;
+use NeneProfile\Tests\Support\FixedClock;
 use NeneProfile\Tests\Support\SqlitePdoTestTrait;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +23,7 @@ final class PdoImportJobRepositorySqliteTest extends TestCase
     {
         $pdo = $this->sqlitePdo();
         $this->createSchema($pdo);
-        $this->repo = new PdoImportJobRepository($this->executor($pdo));
+        $this->repo = new PdoImportJobRepository($this->executor($pdo), new FixedClock());
     }
 
     private function createSchema(PDO $pdo): void

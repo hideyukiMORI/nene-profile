@@ -12,6 +12,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Psr\Container\ContainerInterface;
 
@@ -29,7 +30,7 @@ final readonly class OrganizationSettingsServiceProvider implements ServiceProvi
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoOrganizationSettingsRepository($query);
+                    return new PdoOrganizationSettingsRepository($query, self::get($c, ClockInterface::class));
                 },
             )
             ->set(
@@ -43,7 +44,7 @@ final readonly class OrganizationSettingsServiceProvider implements ServiceProvi
                 static fn (ContainerInterface $c): UpdateOrganizationSettingsUseCaseInterface => new UpdateOrganizationSettingsUseCase(
                     self::repo($c),
                     self::tx($c),
-                    self::settingsFactory(),
+                    self::settingsFactory(self::get($c, ClockInterface::class)),
                     self::audit($c),
                 ),
             )
@@ -94,10 +95,10 @@ final readonly class OrganizationSettingsServiceProvider implements ServiceProvi
     /**
      * @return Closure(DatabaseQueryExecutorInterface): OrganizationSettingsRepositoryInterface
      */
-    private static function settingsFactory(): Closure
+    private static function settingsFactory(ClockInterface $clock): Closure
     {
         return static fn (DatabaseQueryExecutorInterface $exec): OrganizationSettingsRepositoryInterface
-            => new PdoOrganizationSettingsRepository($exec);
+            => new PdoOrganizationSettingsRepository($exec, $clock);
     }
 
     /**

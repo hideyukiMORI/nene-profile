@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\ImportJob;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoImportJobRepository implements ImportJobRepositoryInterface
 {
@@ -13,6 +14,7 @@ final readonly class PdoImportJobRepository implements ImportJobRepositoryInterf
 
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -46,7 +48,7 @@ final readonly class PdoImportJobRepository implements ImportJobRepositoryInterf
 
     public function save(ImportJob $job): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         $this->query->execute(
             'INSERT INTO import_jobs
                 (organization_id, actor_user_id, preset_version_id, original_filename, original_file_hash,
@@ -73,7 +75,7 @@ final readonly class PdoImportJobRepository implements ImportJobRepositoryInterf
 
     public function complete(int $id, string $status, int $rowCount, int $errorCount): void
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         $this->query->execute(
             'UPDATE import_jobs SET status = ?, row_count = ?, error_count = ?, completed_at = ?, updated_at = ? WHERE id = ?',
             [$status, $rowCount, $errorCount, $now, $now, $id],
@@ -83,7 +85,7 @@ final readonly class PdoImportJobRepository implements ImportJobRepositoryInterf
     /** @param list<ImportJobError> $errors */
     public function appendErrors(int $importJobId, array $errors): void
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         foreach ($errors as $error) {
             $this->query->execute(
                 'INSERT INTO import_job_errors (import_job_id, raw_row_number, message, raw_snippet, created_at)
@@ -124,7 +126,7 @@ final readonly class PdoImportJobRepository implements ImportJobRepositoryInterf
     /** @param list<NormalizedTransaction> $transactions */
     public function appendTransactions(int $importJobId, array $transactions): void
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         foreach ($transactions as $t) {
             $this->query->execute(
                 'INSERT INTO normalized_transactions

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneProfile\ImportJob;
 
+use Nene2\Http\ClockInterface;
 use RuntimeException;
 
 /**
@@ -16,6 +17,7 @@ final readonly class LocalFileStorage implements FileStorageInterface
 {
     public function __construct(
         private string $basePath,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -27,7 +29,7 @@ final readonly class LocalFileStorage implements FileStorageInterface
             throw new RuntimeException("Could not create storage directory: {$dir}");
         }
 
-        $key = $organizationId . '/' . self::generateId() . '.csv';
+        $key = $organizationId . '/' . $this->generateId() . '.csv';
         $path = $this->basePath . '/' . $key;
 
         if (file_exists($path)) {
@@ -58,9 +60,10 @@ final readonly class LocalFileStorage implements FileStorageInterface
         return is_file($this->basePath . '/' . $key);
     }
 
-    private static function generateId(): string
+    private function generateId(): string
     {
         // Time-sortable random id (not a strict ULID, but sufficient and unique).
-        return dechex((int) (microtime(true) * 1000)) . '_' . bin2hex(random_bytes(8));
+        // format('Uv') = epoch milliseconds, same instant microtime(true)*1000 read.
+        return dechex((int) $this->clock->now()->format('Uv')) . '_' . bin2hex(random_bytes(8));
     }
 }

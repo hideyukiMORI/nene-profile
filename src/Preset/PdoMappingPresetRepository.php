@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\Preset;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoMappingPresetRepository implements MappingPresetRepositoryInterface
 {
@@ -12,6 +13,7 @@ final readonly class PdoMappingPresetRepository implements MappingPresetReposito
 
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -50,7 +52,7 @@ final readonly class PdoMappingPresetRepository implements MappingPresetReposito
 
     public function save(MappingPreset $preset): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         $this->query->execute(
             'INSERT INTO mapping_presets (organization_id, name, bank_label, current_version_id, is_deleted, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -72,7 +74,7 @@ final readonly class PdoMappingPresetRepository implements MappingPresetReposito
     {
         $this->query->execute(
             'UPDATE mapping_presets SET name = ?, bank_label = ?, updated_at = ? WHERE id = ?',
-            [$name, $bankLabel, date('Y-m-d H:i:s'), $id],
+            [$name, $bankLabel, $this->clock->now()->format('Y-m-d H:i:s'), $id],
         );
     }
 
@@ -80,7 +82,7 @@ final readonly class PdoMappingPresetRepository implements MappingPresetReposito
     {
         $this->query->execute(
             'UPDATE mapping_presets SET current_version_id = ?, updated_at = ? WHERE id = ?',
-            [$versionId, date('Y-m-d H:i:s'), $id],
+            [$versionId, $this->clock->now()->format('Y-m-d H:i:s'), $id],
         );
     }
 
@@ -88,7 +90,7 @@ final readonly class PdoMappingPresetRepository implements MappingPresetReposito
     {
         $this->query->execute(
             'UPDATE mapping_presets SET is_deleted = 1, updated_at = ? WHERE id = ?',
-            [date('Y-m-d H:i:s'), $id],
+            [$this->clock->now()->format('Y-m-d H:i:s'), $id],
         );
     }
 

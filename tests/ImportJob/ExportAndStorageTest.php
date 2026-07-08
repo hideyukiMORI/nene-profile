@@ -8,6 +8,7 @@ use NeneProfile\ImportJob\CsvExporter;
 use NeneProfile\ImportJob\LocalFileStorage;
 use NeneProfile\ImportJob\NormalizedTransaction;
 use NeneProfile\ImportJob\StandardTransactionSerializer;
+use NeneProfile\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class ExportAndStorageTest extends TestCase
@@ -66,7 +67,7 @@ final class ExportAndStorageTest extends TestCase
     public function test_local_storage_round_trip_and_no_overwrite(): void
     {
         $base = sys_get_temp_dir() . '/nene-profile-test-' . bin2hex(random_bytes(4));
-        $storage = new LocalFileStorage($base);
+        $storage = new LocalFileStorage($base, new FixedClock());
 
         $key1 = $storage->store(7, 'hello');
         $key2 = $storage->store(7, 'hello'); // same content → different key (no overwrite)

@@ -124,6 +124,7 @@ final class ImportJobHandlersTest extends TestCase
             $this->jobsFactory(),
             $this->audit,
             $this->settings,
+            new FixedClock(),
         );
     }
 

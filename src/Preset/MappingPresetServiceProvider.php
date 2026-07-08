@@ -12,6 +12,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -30,7 +31,7 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoMappingPresetRepository($query);
+                    return new PdoMappingPresetRepository($query, self::get($c, ClockInterface::class));
                 },
             )
             ->set(
@@ -42,7 +43,7 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoMappingPresetVersionRepository($query);
+                    return new PdoMappingPresetVersionRepository($query, self::get($c, ClockInterface::class));
                 },
             )
             ->set(
@@ -62,8 +63,8 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 CreateMappingPresetUseCaseInterface::class,
                 static fn (ContainerInterface $c): CreateMappingPresetUseCaseInterface => new CreateMappingPresetUseCase(
                     self::tx($c),
-                    self::presetsFactory(),
-                    self::versionsFactory(),
+                    self::presetsFactory(self::get($c, ClockInterface::class)),
+                    self::versionsFactory(self::get($c, ClockInterface::class)),
                     self::audit($c),
                 ),
             )
@@ -73,8 +74,8 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                     self::presetRepo($c),
                     self::versionRepo($c),
                     self::tx($c),
-                    self::presetsFactory(),
-                    self::versionsFactory(),
+                    self::presetsFactory(self::get($c, ClockInterface::class)),
+                    self::versionsFactory(self::get($c, ClockInterface::class)),
                     self::audit($c),
                 ),
             )
@@ -83,7 +84,7 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
                 static fn (ContainerInterface $c): DeleteMappingPresetUseCaseInterface => new DeleteMappingPresetUseCase(
                     self::presetRepo($c),
                     self::tx($c),
-                    self::presetsFactory(),
+                    self::presetsFactory(self::get($c, ClockInterface::class)),
                     self::audit($c),
                 ),
             )
@@ -169,19 +170,19 @@ final readonly class MappingPresetServiceProvider implements ServiceProviderInte
     /**
      * @return Closure(DatabaseQueryExecutorInterface): MappingPresetRepositoryInterface
      */
-    private static function presetsFactory(): Closure
+    private static function presetsFactory(ClockInterface $clock): Closure
     {
         return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetRepositoryInterface
-            => new PdoMappingPresetRepository($exec);
+            => new PdoMappingPresetRepository($exec, $clock);
     }
 
     /**
      * @return Closure(DatabaseQueryExecutorInterface): MappingPresetVersionRepositoryInterface
      */
-    private static function versionsFactory(): Closure
+    private static function versionsFactory(ClockInterface $clock): Closure
     {
         return static fn (DatabaseQueryExecutorInterface $exec): MappingPresetVersionRepositoryInterface
-            => new PdoMappingPresetVersionRepository($exec);
+            => new PdoMappingPresetVersionRepository($exec, $clock);
     }
 
     private static function json(ContainerInterface $c): JsonResponseFactory

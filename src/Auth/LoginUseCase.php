@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\Auth;
 
 use Nene2\Auth\TokenIssuerInterface;
+use Nene2\Http\ClockInterface;
 use NeneProfile\User\UserRepositoryInterface;
 
 final readonly class LoginUseCase implements LoginUseCaseInterface
@@ -14,6 +15,7 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
     public function __construct(
         private UserRepositoryInterface $users,
         private TokenIssuerInterface $tokenIssuer,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -31,7 +33,9 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
             throw new InvalidCredentialsException();
         }
 
-        $expiresAt = time() + self::TOKEN_TTL_SECONDS;
+        // Read "now" once so iat and exp can never straddle a second boundary.
+        $now = $this->clock->now()->getTimestamp();
+        $expiresAt = $now + self::TOKEN_TTL_SECONDS;
 
         // superadmin has no org context; all other roles embed their org_id in the JWT.
         $orgId = $role === Role::Superadmin ? null : $user->organizationId;
@@ -41,7 +45,7 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
             'sub'    => $user->id,
             'role'   => $role->value,
             'org_id' => $orgId,
-            'iat'    => time(),
+            'iat'    => $now,
             'exp'    => $expiresAt,
         ]);
 

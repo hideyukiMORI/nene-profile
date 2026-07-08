@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace NeneProfile\Preset;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoMappingPresetVersionRepository implements MappingPresetVersionRepositoryInterface
 {
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -40,7 +42,7 @@ final readonly class PdoMappingPresetVersionRepository implements MappingPresetV
         $this->query->execute(
             'INSERT INTO mapping_preset_versions (preset_id, version_number, definition_json, created_at)
              VALUES (?, ?, ?, ?)',
-            [$presetId, $versionNumber, $json, date('Y-m-d H:i:s')],
+            [$presetId, $versionNumber, $json, $this->clock->now()->format('Y-m-d H:i:s')],
         );
 
         return $this->query->lastInsertId();

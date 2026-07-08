@@ -6,6 +6,7 @@ namespace NeneProfile\User;
 
 use Nene2\Database\DatabaseConstraintException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoUserRepository implements UserRepositoryInterface
 {
@@ -18,6 +19,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
 
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -79,7 +81,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
 
     public function save(User $user): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         try {
             $this->query->execute(
@@ -110,7 +112,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
     {
         $this->query->execute(
             'UPDATE users SET role = ?, updated_at = ? WHERE id = ?',
-            [$role, date('Y-m-d H:i:s'), $id],
+            [$role, $this->clock->now()->format('Y-m-d H:i:s'), $id],
         );
     }
 
@@ -118,7 +120,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
     {
         $this->query->execute(
             'UPDATE users SET status = ?, updated_at = ? WHERE id = ?',
-            [$status, date('Y-m-d H:i:s'), $id],
+            [$status, $this->clock->now()->format('Y-m-d H:i:s'), $id],
         );
     }
 
@@ -126,7 +128,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
     {
         $this->query->execute(
             'UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?',
-            [$passwordHash, date('Y-m-d H:i:s'), $id],
+            [$passwordHash, $this->clock->now()->format('Y-m-d H:i:s'), $id],
         );
     }
 

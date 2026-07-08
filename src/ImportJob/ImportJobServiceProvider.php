@@ -12,6 +12,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\Preset\MappingPresetRepositoryInterface;
@@ -36,7 +37,7 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoImportJobRepository($query);
+                    return new PdoImportJobRepository($query, self::get($c, ClockInterface::class));
                 },
             )
             ->set(
@@ -47,7 +48,7 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                         $base = dirname(__DIR__, 2) . '/storage/uploads';
                     }
 
-                    return new LocalFileStorage($base);
+                    return new LocalFileStorage($base, self::get($c, ClockInterface::class));
                 },
             )
             ->set(CsvParser::class, static fn (ContainerInterface $c): CsvParser => new CsvParser())
@@ -65,9 +66,10 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
                     self::get($c, CsvParser::class),
                     self::get($c, NormalizationRunner::class),
                     self::get($c, DatabaseTransactionManagerInterface::class),
-                    self::jobsFactory(),
+                    self::jobsFactory(self::get($c, ClockInterface::class)),
                     self::get($c, AuditRecorderFactoryInterface::class),
                     self::get($c, OrganizationSettingsRepositoryInterface::class),
+                    self::get($c, ClockInterface::class),
                 ),
             )
             ->set(
@@ -175,10 +177,10 @@ final readonly class ImportJobServiceProvider implements ServiceProviderInterfac
     /**
      * @return Closure(DatabaseQueryExecutorInterface): ImportJobRepositoryInterface
      */
-    private static function jobsFactory(): Closure
+    private static function jobsFactory(ClockInterface $clock): Closure
     {
         return static fn (DatabaseQueryExecutorInterface $exec): ImportJobRepositoryInterface
-            => new PdoImportJobRepository($exec);
+            => new PdoImportJobRepository($exec, $clock);
     }
 
     /**

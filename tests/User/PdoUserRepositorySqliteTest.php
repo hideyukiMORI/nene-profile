@@ -6,6 +6,7 @@ namespace NeneProfile\Tests\User;
 
 use Nene2\Database\DatabaseConnectionFactoryInterface;
 use Nene2\Database\PdoDatabaseQueryExecutor;
+use NeneProfile\Tests\Support\FixedClock;
 use NeneProfile\User\PdoUserRepository;
 use NeneProfile\User\User;
 use NeneProfile\User\UserEmailConflictException;
@@ -50,7 +51,7 @@ final class PdoUserRepositorySqliteTest extends TestCase
             }
         };
 
-        $this->repo = new PdoUserRepository(new PdoDatabaseQueryExecutor($factory, $pdo));
+        $this->repo = new PdoUserRepository(new PdoDatabaseQueryExecutor($factory, $pdo), new FixedClock());
     }
 
     public function test_create_and_find_by_email(): void
