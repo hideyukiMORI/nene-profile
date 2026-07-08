@@ -9,6 +9,7 @@ use NeneProfile\Preset\MappingDefinitionFactory;
 use NeneProfile\Preset\MappingPreset;
 use NeneProfile\Preset\PdoMappingPresetRepository;
 use NeneProfile\Preset\PdoMappingPresetVersionRepository;
+use NeneProfile\Tests\Support\FixedClock;
 use NeneProfile\Tests\Support\SqlitePdoTestTrait;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -25,8 +26,8 @@ final class PdoMappingPresetRepositorySqliteTest extends TestCase
         $pdo = $this->sqlitePdo();
         $this->createSchema($pdo);
         $executor = $this->executor($pdo);
-        $this->presets  = new PdoMappingPresetRepository($executor);
-        $this->versions = new PdoMappingPresetVersionRepository($executor);
+        $this->presets  = new PdoMappingPresetRepository($executor, new FixedClock());
+        $this->versions = new PdoMappingPresetVersionRepository($executor, new FixedClock());
     }
 
     private function createSchema(PDO $pdo): void

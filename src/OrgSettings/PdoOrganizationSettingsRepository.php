@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneProfile\OrgSettings;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoOrganizationSettingsRepository implements OrganizationSettingsRepositoryInterface
 {
@@ -12,6 +13,7 @@ final readonly class PdoOrganizationSettingsRepository implements OrganizationSe
 
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -27,7 +29,7 @@ final readonly class PdoOrganizationSettingsRepository implements OrganizationSe
 
     public function upsert(OrganizationSettings $settings): void
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         $existing = $this->findByOrganizationId($settings->organizationId);
 
         if ($existing === null) {

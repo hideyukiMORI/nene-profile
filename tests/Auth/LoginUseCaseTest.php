@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 namespace NeneProfile\Tests\Auth;
 
+use DateTimeImmutable;
 use Nene2\Auth\TokenIssuerInterface;
 use NeneProfile\Auth\InvalidCredentialsException;
 use NeneProfile\Auth\LoginInput;
 use NeneProfile\Auth\LoginUseCase;
+use NeneProfile\Tests\Support\FixedClock;
 use NeneProfile\Tests\User\InMemoryUserRepository;
 use NeneProfile\User\User;
 use PHPUnit\Framework\TestCase;
 
 final class LoginUseCaseTest extends TestCase
 {
+    /** Fixed instant injected via FixedClock: iat/exp/expiresAt become exact. */
+    private const NOW_ISO = '2026-07-05T00:00:00+00:00';
+    private const TOKEN_TTL_SECONDS = 86400;
+
     private InMemoryUserRepository $repo;
     private LoginUseCase $useCase;
 
@@ -29,7 +35,7 @@ final class LoginUseCaseTest extends TestCase
             }
         };
 
-        $this->useCase = new LoginUseCase($this->repo, $tokenIssuer);
+        $this->useCase = new LoginUseCase($this->repo, $tokenIssuer, new FixedClock(self::NOW_ISO));
     }
 
     private function seedUser(string $email, string $password, string $role, ?int $organizationId): void
@@ -57,7 +63,15 @@ final class LoginUseCaseTest extends TestCase
         $this->assertSame('admin', $output->role);
         $this->assertSame(1, $output->orgId);
         $this->assertNotEmpty($output->token);
-        $this->assertGreaterThan(time(), $output->expiresAt);
+
+        // Deterministic time assertions: the injected FixedClock pins "now".
+        $now = (new DateTimeImmutable(self::NOW_ISO))->getTimestamp();
+        $this->assertSame($now + self::TOKEN_TTL_SECONDS, $output->expiresAt);
+
+        $claims = json_decode(base64_decode(explode('.', $output->token, 2)[1], true) ?: '{}', true);
+        $this->assertIsArray($claims);
+        $this->assertSame($now, $claims['iat']);
+        $this->assertSame($now + self::TOKEN_TTL_SECONDS, $claims['exp']);
     }
 
     public function test_superadmin_login_has_null_org_id(): void

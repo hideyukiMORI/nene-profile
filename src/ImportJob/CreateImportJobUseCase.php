@@ -9,6 +9,7 @@ use Nene2\Audit\AuditEvent;
 use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
+use Nene2\Http\ClockInterface;
 use NeneProfile\OrgSettings\OrganizationSettings;
 use NeneProfile\OrgSettings\OrganizationSettingsRepositoryInterface;
 use NeneProfile\Preset\MappingPresetNotFoundException;
@@ -51,6 +52,7 @@ final readonly class CreateImportJobUseCase implements CreateImportJobUseCaseInt
         private Closure $jobsFactory,
         private AuditRecorderFactoryInterface $auditFactory,
         private OrganizationSettingsRepositoryInterface $settings,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -82,7 +84,7 @@ final readonly class CreateImportJobUseCase implements CreateImportJobUseCaseInt
         $fileHash = hash('sha256', $input->fileContents);
         $this->storage->store($input->organizationId, $input->fileContents);
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         $jobId = $this->jobs->save(new ImportJob(
             id: 0,
             organizationId: $input->organizationId,

@@ -6,6 +6,7 @@ namespace NeneProfile\Tests\OrgSettings;
 
 use NeneProfile\OrgSettings\OrganizationSettings;
 use NeneProfile\OrgSettings\PdoOrganizationSettingsRepository;
+use NeneProfile\Tests\Support\FixedClock;
 use NeneProfile\Tests\Support\SqlitePdoTestTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -31,7 +32,7 @@ final class PdoOrganizationSettingsRepositorySqliteTest extends TestCase
         );
         $pdo->exec('CREATE UNIQUE INDEX uniq_settings_org ON organization_settings (organization_id)');
 
-        $this->repo = new PdoOrganizationSettingsRepository($this->executor($pdo));
+        $this->repo = new PdoOrganizationSettingsRepository($this->executor($pdo), new FixedClock());
     }
 
     public function test_returns_null_when_unset(): void

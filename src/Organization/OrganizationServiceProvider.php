@@ -12,6 +12,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -30,7 +31,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoOrganizationRepository($query);
+                    return new PdoOrganizationRepository($query, self::clock($c));
                 },
             )
             ->set(
@@ -62,7 +63,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                 static fn (ContainerInterface $c): CreateOrganizationUseCaseInterface => new CreateOrganizationUseCase(
                     self::repo($c),
                     self::tx($c),
-                    self::organizationsFactory(),
+                    self::organizationsFactory(self::clock($c)),
                     self::audit($c),
                 ),
             )
@@ -71,7 +72,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                 static fn (ContainerInterface $c): DeleteOrganizationUseCaseInterface => new DeleteOrganizationUseCase(
                     self::repo($c),
                     self::tx($c),
-                    self::organizationsFactory(),
+                    self::organizationsFactory(self::clock($c)),
                     self::audit($c),
                 ),
             )
@@ -131,7 +132,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                 static fn (ContainerInterface $c): UpdateOrganizationUseCaseInterface => new UpdateOrganizationUseCase(
                     self::repo($c),
                     self::tx($c),
-                    self::organizationsFactory(),
+                    self::organizationsFactory(self::clock($c)),
                     self::audit($c),
                 ),
             )
@@ -272,12 +273,23 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
         return $audit;
     }
 
+    private static function clock(ContainerInterface $c): ClockInterface
+    {
+        $clock = $c->get(ClockInterface::class);
+
+        if (!$clock instanceof ClockInterface) {
+            throw new LogicException('Clock service is invalid.');
+        }
+
+        return $clock;
+    }
+
     /**
      * @return Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface
      */
-    private static function organizationsFactory(): Closure
+    private static function organizationsFactory(ClockInterface $clock): Closure
     {
         return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface
-            => new PdoOrganizationRepository($exec);
+            => new PdoOrganizationRepository($exec, $clock);
     }
 }

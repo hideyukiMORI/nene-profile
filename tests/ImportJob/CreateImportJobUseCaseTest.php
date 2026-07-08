@@ -78,6 +78,7 @@ final class CreateImportJobUseCaseTest extends TestCase
             $this->jobsFactory(),
             $this->auditRepo,
             new InMemoryOrganizationSettingsRepository(),
+            new FixedClock(),
         );
     }
 

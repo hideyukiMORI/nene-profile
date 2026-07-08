@@ -12,6 +12,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -30,7 +31,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoUserRepository($query);
+                    return new PdoUserRepository($query, self::get($c, ClockInterface::class));
                 },
             )
             ->set(
@@ -50,7 +51,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): CreateUserUseCaseInterface => new CreateUserUseCase(
                     self::repo($c),
                     self::tx($c),
-                    self::usersFactory(),
+                    self::usersFactory(self::get($c, ClockInterface::class)),
                     self::audit($c),
                 ),
             )
@@ -59,7 +60,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): UpdateUserUseCaseInterface => new UpdateUserUseCase(
                     self::repo($c),
                     self::tx($c),
-                    self::usersFactory(),
+                    self::usersFactory(self::get($c, ClockInterface::class)),
                     self::audit($c),
                 ),
             )
@@ -68,7 +69,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): DeleteUserUseCaseInterface => new DeleteUserUseCase(
                     self::repo($c),
                     self::tx($c),
-                    self::usersFactory(),
+                    self::usersFactory(self::get($c, ClockInterface::class)),
                     self::audit($c),
                 ),
             )
@@ -161,10 +162,10 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
     /**
      * @return Closure(DatabaseQueryExecutorInterface): UserRepositoryInterface
      */
-    private static function usersFactory(): Closure
+    private static function usersFactory(ClockInterface $clock): Closure
     {
         return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface
-            => new PdoUserRepository($exec);
+            => new PdoUserRepository($exec, $clock);
     }
 
     private static function json(ContainerInterface $c): JsonResponseFactory

@@ -7,6 +7,7 @@ namespace NeneProfile\Tests\Organization;
 use NeneProfile\Organization\Organization;
 use NeneProfile\Organization\OrganizationSlugConflictException;
 use NeneProfile\Organization\PdoOrganizationRepository;
+use NeneProfile\Tests\Support\FixedClock;
 use NeneProfile\Tests\Support\SqlitePdoTestTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -32,7 +33,7 @@ final class PdoOrganizationRepositorySqliteTest extends TestCase
         );
         $pdo->exec('CREATE UNIQUE INDEX uniq_org_slug ON organizations (slug)');
 
-        $this->repo = new PdoOrganizationRepository($this->executor($pdo));
+        $this->repo = new PdoOrganizationRepository($this->executor($pdo), new FixedClock());
     }
 
     public function test_save_and_find_by_id(): void
