@@ -102,5 +102,19 @@ export default tseslint.config(
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: { ecmaVersion: 2023, globals: globals.node },
   },
+  {
+    // react-hook-form's `Path<T>` types dynamic array field names as
+    // `` `columns.${number}.xxx` `` (a literal `number`, not `string`). Building
+    // those paths from a numeric index requires the index to stay typed as
+    // `number` in the template literal for the result to match `Path<T>`
+    // (stringifying it first, e.g. via `String(index)`, widens the segment to
+    // `string` and breaks the match). Numbers always stringify predictably
+    // (unlike objects/booleans/nullish), so allow them here rather than in the
+    // strict-type-checked default for the whole app.
+    files: ['src/features/mapping-presets/ui/PresetFields.tsx'],
+    rules: {
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+    },
+  },
   eslintConfigPrettier,
 )

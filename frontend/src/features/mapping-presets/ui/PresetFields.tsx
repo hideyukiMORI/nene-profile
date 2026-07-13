@@ -133,7 +133,7 @@ export function PresetFields({ register, errors, watch, title, footer }: PresetF
           </div>
           {STANDARD_FIELDS.map((field, index) => {
             const label = t(fieldLabelKey[field])
-            const optional = watch(`columns.${String(index)}.optional`) as boolean
+            const optional = watch(`columns.${index}.optional`)
             return (
               <div className="map-row" key={field}>
                 <div className="mlabel">
@@ -145,24 +145,20 @@ export function PresetFields({ register, errors, watch, title, footer }: PresetF
                   className="mono"
                   aria-label={`${label} ${t('admin.mappingPresets.create.source')}`}
                   placeholder={t('admin.mappingPresets.create.source')}
-                  {...register(`columns.${String(index)}.source`)}
+                  {...register(`columns.${index}.source`)}
                 />
                 <div className="row" style={{ gap: 10 }}>
                   <Select
                     style={{ flex: 1 }}
                     aria-label={`${label} ${t('admin.mappingPresets.create.transform')}`}
                     options={rawOptions(TRANSFORMS)}
-                    {...register(`columns.${String(index)}.transform`)}
+                    {...register(`columns.${index}.transform`)}
                   />
                   <label
                     className={`toggle${optional ? ' is-on' : ''}`}
                     title={t('admin.mappingPresets.create.optional')}
                   >
-                    <input
-                      type="checkbox"
-                      hidden
-                      {...register(`columns.${String(index)}.optional`)}
-                    />
+                    <input type="checkbox" hidden {...register(`columns.${index}.optional`)} />
                     <span className="toggle__track" aria-hidden="true" />
                   </label>
                 </div>

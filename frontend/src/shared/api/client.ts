@@ -41,7 +41,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(buildUrl(path), {
     method: options.method ?? 'GET',
     headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
     ...(options.signal !== undefined ? { signal: options.signal } : {}),
   })
 

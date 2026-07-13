@@ -43,10 +43,15 @@ describe('SettingsForm', () => {
   })
 
   it('sends the token when provided', async () => {
-    let received: { clear_bearer_token?: string } | null = null
+    // `received` is boxed in a mutable object (rather than a bare `let`) so that
+    // TypeScript's control-flow narrowing — which otherwise collapses the type to
+    // its literal initial value `null` because the only reassignment happens
+    // inside the msw handler closure — doesn't turn the post-`waitFor` read below
+    // into `never`.
+    const state: { received: { clear_bearer_token?: string } | null } = { received: null }
     server.use(
       http.patch('/admin/organization-settings', async ({ request }) => {
-        received = (await request.json()) as typeof received
+        state.received = (await request.json()) as typeof state.received
         return HttpResponse.json({
           organization_id: 1,
           default_encoding: 'auto',
@@ -63,8 +68,8 @@ describe('SettingsForm', () => {
     await user.click(screen.getByTestId('settings-save'))
 
     await waitFor(() => {
-      expect(received).not.toBeNull()
+      expect(state.received).not.toBeNull()
     })
-    expect(received?.clear_bearer_token).toBe('tok_123')
+    expect(state.received?.clear_bearer_token).toBe('tok_123')
   })
 })

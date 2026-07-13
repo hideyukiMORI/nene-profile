@@ -28,7 +28,7 @@ export function JobErrorsView({ jobId }: JobErrorsViewProps) {
 
   return (
     <Stack gap="sm">
-      <Text as="h3" variant="heading">
+      <Text as="h2" variant="heading">
         {t('admin.importJobs.errors.title')}
       </Text>
       <AsyncBoundary

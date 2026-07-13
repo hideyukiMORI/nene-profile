@@ -19,8 +19,16 @@ export interface DataTableProps<T> {
   footer?: ReactNode
 }
 
-/** Maps a column to its design-system cell class (numeric / actions). */
-function cellClass(column: Column<unknown>): string {
+/**
+ * Maps a column to its design-system cell class (numeric / actions).
+ *
+ * Takes a structural subset (`id`/`align`) rather than `Column<unknown>`: the
+ * generic `render: (row: T) => ReactNode` field makes `Column<T>` and
+ * `Column<unknown>` mutually unassignable (contravariant parameter position),
+ * so a `Column<unknown>` parameter would reject every call site below. This
+ * function never touches `render`, so it doesn't need the type parameter.
+ */
+function cellClass(column: { id: string; align?: 'start' | 'end' }): string {
   if (column.id === 'actions') return 'actions'
   if (column.align === 'end') return 'num'
   return ''
