@@ -35,6 +35,17 @@ matching, or dunning. Built on [NENE2](https://github.com/hideyukiMORI/NENE2).
 - **Self-hosted OSS** — MIT; Tier A or Docker
 - **No per-import SaaS fee** — unlimited banks via mapping UI
 
+## Non-goals
+
+- Not matching bank lines to invoices — [`nene-clear`](https://github.com/hideyukiMORI/nene-clear)
+- Not writing payments back to the Invoice API — [`nene-clear`](https://github.com/hideyukiMORI/nene-clear)
+- Not sending dunning notices — [`nene-clear`](https://github.com/hideyukiMORI/nene-clear)
+- Not storing received PDFs / 電帳法 document archive — [`nene-vault`](https://github.com/hideyukiMORI/nene-vault)
+- Not issuing quotes or invoices — [`nene-invoice`](https://github.com/hideyukiMORI/nene-invoice)
+- Not auto-importing from bank API (CSV upload first; MVP scope)
+
+Full list: [`docs/explanation/scope-contract.md`](./docs/explanation/scope-contract.md)
+
 ## Documentation (read first)
 
 | Topic | Document |
@@ -57,6 +68,10 @@ The Compose stack ships sensible MySQL defaults; copy the example env to customi
 ```bash
 cp .env.example .env            # uncomment the Docker / MySQL block for local Docker
 docker compose up -d --build    # MySQL → migrate → seed → Apache
+
+# Admin SPA:  http://localhost:8490/admin/
+# API health: http://localhost:8490/health
+# phpMyAdmin: http://localhost:8491
 ```
 
 Build the admin SPA into `public_html/admin/` (same-origin under `/admin/`):
@@ -66,14 +81,18 @@ npm --prefix frontend ci
 npm --prefix frontend run build
 ```
 
-| Service | URL |
-| --- | --- |
-| Admin SPA | http://localhost:8490/admin/ |
-| API health | http://localhost:8490/health |
-| phpMyAdmin | http://localhost:8491 |
-
 Default seed superadmin: `admin@nene-profile.local` / `changeme`
 (override via `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`).
+
+## Local ports
+
+NeNe Profile owns the **`84**` port lane**; sibling products use their own lanes so several apps can run locally side by side. Override via `NENE_PROFILE_*` in `.env`.
+
+| Service | Port |
+| --- | --- |
+| Admin SPA + API (Docker app) | 8490 |
+| MySQL (Docker) | 3409 |
+| phpMyAdmin (Docker) | 8491 |
 
 ## Status
 
@@ -86,12 +105,14 @@ Default seed superadmin: `admin@nene-profile.local` / `changeme`
 
 See [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
 
-**Implemented:** multi-tenant auth (JWT + capability-based RBAC), 9 transformers
-(date formats incl. Japanese era `date_era`, debit/credit sign, yen→cents, regex
-extract — [ADR 0003](./docs/adr/0003-transform-fidelity.md)), immutable original-file
-storage with SHA-256 provenance ([ADR 0004](./docs/adr/0004-original-file-immutability.md)),
-full before/after audit trail, RFC 9457 problem responses, OpenAPI 3.1 contract,
-React 19 admin SPA, and CI quality gates (PHPStan L8 · CS-Fixer · PHPUnit · Vitest · Playwright E2E).
+Key shipped features:
+
+- Multi-tenant auth (JWT + capability-based RBAC)
+- 9 transformers — date formats incl. Japanese era `date_era`, debit/credit sign, yen→cents, regex extract ([ADR 0003](./docs/adr/0003-transform-fidelity.md))
+- Immutable original-file storage with SHA-256 provenance ([ADR 0004](./docs/adr/0004-original-file-immutability.md))
+- Full before/after audit trail, RFC 9457 problem responses, OpenAPI 3.1 contract
+- React 19 admin SPA
+- CI quality gates (PHPStan L8 · CS-Fixer · PHPUnit · Vitest · Playwright E2E)
 
 ## Pipeline position
 
