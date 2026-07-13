@@ -139,6 +139,7 @@ export const jaMessages = {
   'admin.organizations.create.slugRequired': 'スラグを入力してください。',
   'admin.organizations.create.slugInvalid': 'スラグは英小文字・数字・ハイフンのみ使用できます。',
   'admin.organizations.create.error': '組織を作成できませんでした。入力内容を確認してください。',
+  'admin.organizations.edit.title': '組織の編集',
   'admin.organizations.delete.title': '組織を削除しますか？',
   'admin.organizations.delete.message': '「{{name}}」を削除します。この操作は取り消せません。',
   'admin.organizations.delete.confirm': '削除する',
