@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { tokenStore } from '@/shared/api/client'
 import { authStore, type AuthSession } from './model'
 
 function session(overrides: Partial<AuthSession> = {}): AuthSession {
@@ -43,6 +44,26 @@ describe('authStore', () => {
     authStore.setSession(session({ expiresAt: new Date(Date.now() - 1000).toISOString() }))
 
     expect(authStore.getSession()).not.toBeNull()
+    expect(authStore.isAuthenticated()).toBe(false)
+  })
+
+  it('behavior change: the raw token outlives an in-memory reset (reload), unlike the extras', () => {
+    // Simulates a same-tab reload: sessionStorage (the token store) survives,
+    // but module-level state (the `extras` closure in model.ts) does not.
+    // Before adopting createSessionTokenStore, the token was purely in-memory
+    // and would have been lost too.
+    authStore.setSession(session())
+    tokenStore.setToken('jwt-token') // no-op re-set to be explicit about intent
+
+    // A reload only resets in-memory module state, not sessionStorage.
+    expect(tokenStore.getToken()).toBe('jwt-token')
+
+    // But the app still treats the user as signed out, because getSession()
+    // requires both the token *and* the in-memory extras — RequireAuth still
+    // redirects to /login and re-populates extras via a fresh login.
+    authStore.clearSession()
+    tokenStore.setToken('jwt-token') // re-plant only the token, as a reload would leave it
+    expect(authStore.getSession()).toBeNull()
     expect(authStore.isAuthenticated()).toBe(false)
   })
 })
