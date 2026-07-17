@@ -3,33 +3,11 @@ name: Backend CI
 on:
   push:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'tools/**'
-      - 'docs/openapi/**'
-      - 'composer.json'
-      - 'composer.lock'
-      - 'phpstan.neon.dist'
-      - 'phpunit.xml.dist'
-      - '.php-cs-fixer.php'
-      - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'tools/**'
-      - 'docs/openapi/**'
-      - 'composer.json'
-      - 'composer.lock'
-      - 'phpstan.neon.dist'
-      - 'phpunit.xml.dist'
-      - '.php-cs-fixer.php'
-      - '.github/workflows/backend-ci.yml'
 
 jobs:
-  check:
+  backend-check:
     runs-on: ubuntu-latest
 
     steps:
