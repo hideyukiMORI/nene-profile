@@ -1,7 +1,7 @@
 import type { OrganizationSettings } from '@/entities/organization-settings'
 import { useTranslation } from '@/shared/i18n'
 import { Field, FormCard, Input, Select, type SelectOption } from '@/shared/ui'
-import { ENCODINGS, useSettingsForm } from '../hooks/use-settings-form'
+import { ENCODINGS, useSettingsForm } from '../model/use-settings-form'
 
 interface SettingsFormProps {
   settings: OrganizationSettings

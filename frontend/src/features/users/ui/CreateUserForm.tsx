@@ -1,6 +1,6 @@
 import { useTranslation, type MessageKey } from '@/shared/i18n'
 import { Field, FormCard, Input } from '@/shared/ui'
-import { useCreateUserForm } from '../hooks/use-create-user-form'
+import { useCreateUserForm } from '../model/use-create-user-form'
 
 interface CreateUserFormProps {
   onCreated: () => void

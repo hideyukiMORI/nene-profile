@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { Field, FormCard, Input } from '@/shared/ui'
-import { useChangePasswordForm } from '../hooks/use-change-password-form'
+import { useChangePasswordForm } from '../model/use-change-password-form'
 
 /** Form for changing the authenticated user's own password (design-system card). */
 export function ChangePasswordForm() {

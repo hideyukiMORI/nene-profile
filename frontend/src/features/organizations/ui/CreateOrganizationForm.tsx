@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { Field, FormCard, Input } from '@/shared/ui'
-import { useCreateOrganizationForm } from '../hooks/use-create-organization-form'
+import { useCreateOrganizationForm } from '../model/use-create-organization-form'
 
 interface CreateOrganizationFormProps {
   onCreated: () => void

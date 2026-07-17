@@ -1,7 +1,7 @@
 import type { ImportJob } from '@/entities/import-job'
 import { useTranslation } from '@/shared/i18n'
 import { Field, FormCard, Icon, Select, type SelectOption } from '@/shared/ui'
-import { useUploadJobForm } from '../hooks/use-upload-job-form'
+import { useUploadJobForm } from '../model/use-upload-job-form'
 
 interface UploadJobFormProps {
   onUploaded: (job: ImportJob) => void

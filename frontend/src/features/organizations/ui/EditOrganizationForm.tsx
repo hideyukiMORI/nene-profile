@@ -1,7 +1,7 @@
 import type { Organization } from '@/entities/organization'
 import { useTranslation } from '@/shared/i18n'
 import { Field, FormCard, Input } from '@/shared/ui'
-import { useEditOrganizationForm } from '../hooks/use-edit-organization-form'
+import { useEditOrganizationForm } from '../model/use-edit-organization-form'
 
 interface EditOrganizationFormProps {
   organization: Organization
