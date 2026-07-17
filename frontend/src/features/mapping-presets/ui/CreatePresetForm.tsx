@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui'
-import { useCreatePresetForm } from '../hooks/use-create-preset-form'
+import { useCreatePresetForm } from '../model/use-create-preset-form'
 import { PresetFields } from './PresetFields'
 
 interface CreatePresetFormProps {

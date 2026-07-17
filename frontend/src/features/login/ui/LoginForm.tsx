@@ -1,7 +1,7 @@
 import { type KeyboardEvent, type ReactElement, useId, useState } from 'react'
 import { useTranslation } from '@/shared/i18n'
 import { Icon } from '@/shared/ui'
-import { useLoginForm } from '../hooks/use-login-form'
+import { useLoginForm } from '../model/use-login-form'
 
 /* Login-specific inline glyphs (24×24, currentColor). Kept local because they
    are only ever used on the sign-in screen — they don't belong in the shared

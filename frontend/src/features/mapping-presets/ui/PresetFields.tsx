@@ -9,7 +9,7 @@ import {
   STANDARD_FIELDS,
   TRANSFORMS,
   type PresetFormValues,
-} from '../hooks/preset-schema'
+} from '../model/preset-schema'
 
 interface PresetFieldsProps {
   register: UseFormRegister<PresetFormValues>

@@ -1,7 +1,7 @@
 import { useTranslation } from '@/shared/i18n'
 import { Field, FormCard, Input, Select, type SelectOption } from '@/shared/ui'
 import type { User } from '@/entities/user'
-import { useEditUserForm } from '../hooks/use-edit-user-form'
+import { useEditUserForm } from '../model/use-edit-user-form'
 
 interface EditUserFormProps {
   user: User

@@ -1,7 +1,7 @@
 import type { MappingPresetDetail } from '@/entities/mapping-preset'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '@/shared/ui'
-import { useEditPresetForm } from '../hooks/use-edit-preset-form'
+import { useEditPresetForm } from '../model/use-edit-preset-form'
 import { PresetFields } from './PresetFields'
 
 interface EditPresetFormProps {
