@@ -21,7 +21,7 @@ See [ADR 0009](docs/adr/0009-separate-from-nene-clear.md).
 - **CSV spec (binding):** `docs/explanation/csv-normalization-spec.md`
 - **Output schema:** `docs/explanation/output-schema.md`
 - **Clear downstream:** `docs/integrations/clear-downstream-contract.md`
-- **Current work:** `docs/todo/current.md`
+- **Current work (運用ログ):** 運用ログ（`docs/todo`・`docs/daily`・field-trials 相当）は private `nene-origin/internal-docs/profile/` に移設済み。最新の作業状況・申し送りはそちらを読むこと。
 
 ## Operating Rules
 
