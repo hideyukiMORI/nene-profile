@@ -17,7 +17,7 @@ NeNe Profile is built through small, Issue-driven changes. This document is the 
 | ワークフロー | [`docs/workflow.md`](workflow.md) |
 | AI エージェント入口 | [`AGENTS.md`](../AGENTS.md) |
 | ロードマップ | [`docs/roadmap.md`](roadmap.md) |
-| 現在のタスク | [`docs/todo/current.md`](todo/current.md) |
+| 現在のタスク（運用ログ） | private `nene-origin/internal-docs/profile/todo/current.md`（移設済み） |
 
 ## Collaboration Policy
 
@@ -29,7 +29,7 @@ Follow [`docs/workflow.md`](workflow.md) — inherited from [NENE2](https://gith
 4. Push, open PR with `Closes #number`, merge after checks — **do not push directly to `main`**.
 
 - Use one branch and one PR per focused work unit.
-- Keep `docs/milestones/`, `docs/roadmap.md`, and `docs/todo/current.md` updated when direction changes.
+- Keep `docs/milestones/` and `docs/roadmap.md` updated when direction changes（運用ログ `current.md` は private `nene-origin/internal-docs/profile/` 側で更新）.
 - Explain intent, impact, verification, and remaining risk in PRs.
 - Prefer documentation that helps the next developer or AI agent decide what to do without rereading chat history.
 

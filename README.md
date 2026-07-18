@@ -103,7 +103,7 @@ NeNe Profile owns the **`84**` port lane**; sibling products use their own lanes
 | **Phase 2** | Admin SPA — organizations, users, presets, import jobs, settings, audit logs, dashboard | ✅ Mostly complete (visual column mapper pending) |
 | **Phase 3** | Official preset library + Clear handoff | Planned |
 
-See [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
+See [`docs/roadmap.md`](./docs/roadmap.md). 運用ログ（作業状況・タスクボード）は private `nene-origin/internal-docs/profile/` に移設済み。
 
 Key shipped features:
 

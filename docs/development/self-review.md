@@ -17,7 +17,7 @@
 ### ワークフロー
 
 - [ ] 関連 GitHub Issue が存在し、ブランチ名が `type/issue-number-summary` 形式
-- [ ] `docs/roadmap.md`・`docs/milestones/`・`docs/todo/current.md` を事前確認済み
+- [ ] `docs/roadmap.md`・`docs/milestones/`・運用ログ（private `nene-origin/internal-docs/profile/`）を事前確認済み
 - [ ] `main` への直接コミットなし
 - [ ] コミットメッセージが Conventional Commits 形式 + `(#issue)` 含む
 
