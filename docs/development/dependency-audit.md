@@ -61,6 +61,24 @@ gh api /advisories/<GHSA> --jq '...'    # ② 脆弱範囲・patch 版は当時�
 
 `frontend/package.json` の `overrides`:
 
+### `"@redocly/openapi-core": { "js-yaml": "^4.3.1" }` — スコープ限定（2026-08-08・#129 で追加）
+
+- **なぜ必要か**: `@redocly/openapi-core` は js-yaml を **exact pin**（`"js-yaml": "4.3.0"`）している。
+  本艦に js-yaml の flat override は無いため、**lockfile 更新だけでは 4.3.1 へ上がらない**
+  （GHSA-5p4m-2wfm-xmqj）。親の exact pin を上書きするために親スコープ限定で当てている。
+- caret（`^4.3.1`）にしてあるのは、exact pin にすると 4.3.x の patch が出るたびにこの行を
+  触ることになるため。ツリー全体へ flat に効かせてはいない（`@eslint/eslintrc` は `^4.1.1` で
+  もともと追随するので巻き込む必要がない）。
+- 効いていることの実測: `npm ls js-yaml --all` が
+  `@redocly/openapi-core@1.34.18 overridden → js-yaml@4.3.1` と表示する。
+- 🔴 **削除条件 / 再読条件**:
+  - `@redocly/openapi-core` が js-yaml 4.3.1+ を**自前で取り込んだら削除**する
+    （`npm ls @redocly/openapi-core` の版を上げたうえで、この override を外して
+    `npm ls js-yaml --all` が 4.3.1+ のままか確認する）。
+  - **次に js-yaml の advisory が来たら、まずこの行を再読する**。
+    「exact pin の親を override している」という事実自体が、親の更新で静かに消えうる
+    （消えた後もこの行は無害に残り続けるため、腐りに気づけない）。
+
 ### `"brace-expansion@5": "^5.0.8"` — **スコープ限定のまま温存**
 
 - **flat 化も撤去も既知の地雷**（deal #202）。`brace-expansion@5` をツリー全体へ flat に強制すると
