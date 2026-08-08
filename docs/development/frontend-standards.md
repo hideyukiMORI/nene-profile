@@ -247,7 +247,8 @@ npm run check --prefix frontend        # 型チェック + lint + format + test 
 npm run build --prefix frontend        # 本番ビルド → public_html/admin/
 ```
 
-CI (フロントエンド変更時): `npm ci` → `npm run check` → `npm audit --audit-level=high`.
+CI (フロントエンド変更時): `npm ci` → `npm run check` → `npm run audit`
+（= audit-ci。allowlist に無い high/critical で fail。運用は [dependency-audit.md](dependency-audit.md)）.
 
 ---
 
