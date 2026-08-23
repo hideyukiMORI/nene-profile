@@ -25,6 +25,10 @@ UI は API の型とエラーを反映するのみ; バリデーションを代�
 | **ファイルアップロード** | `<input type="file">` + `multipart/form-data`。ブラウザの File API を使用; 処理・解析はバックエンドで。 |
 | **ジョブステータス表示** | `pending`/`running` は polling（5 秒間隔、TanStack Query refetchInterval）。`completed`/`completed_with_errors`/`failed` は静的。 |
 | **エラーテーブル** | `import_job_errors` を行単位で表示; `raw_row_number` + `message` + raw snippet。 |
+
+> `cents` は**その通貨の最小単位**であって、表示額の 1/100 ではない。
+> **JPY は小数点以下 0 桁（ISO 4217）なので、`*_cents` には円をそのまま格納する——×100 しない。**
+> 例: ¥1,500 は `1500` として格納する。`116480` は ¥116,480 であって ¥1,164.80 ではない。
 | **認証トークン** | In-memory デフォルト（`localStorage` 保存は ADR 必須）。 |
 | **ビルド出力** | `public_html/admin/` (Tier A 同一オリジン)。 |
 | **RBAC UI** | API 公開のケイパビリティで表示制御; UI ゲーティングは UX のみ — API が認可を強制。 |

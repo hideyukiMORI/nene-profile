@@ -31,6 +31,10 @@ See [ADR 0009](docs/adr/0009-separate-from-nene-clear.md).
 - Do **not** add document/PDF storage — **`nene-vault`**
 - Do **not** duplicate Clear's reconciliation entities in Profile DB
 - Namespace: `NeneProfile\`; amounts: integer cents in output schema
+
+> `cents` = the currency's **minor unit**, not 1/100 of the display amount.
+> **JPY has zero decimal places (ISO 4217), so `*_cents` stores whole yen — never multiply by 100.**
+> Example: ¥1,500 is stored as `1500`. A value like `116480` means ¥116,480, not ¥1,164.80.
 - **Repository docs and commits: Japanese or English only** — no other languages (ADR 0011)
 
 ## Framework
