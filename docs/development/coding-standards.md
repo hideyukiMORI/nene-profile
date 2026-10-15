@@ -28,6 +28,10 @@ dedicated documents below** — this file is the index.
 - **OpenAPI** が公開 API コントラクト; MCP は同一 HTTP 操作にマップ
 - Problem Details `type`: `https://nene-profile.dev/problems/{problem-name}`
 - **金額: integer cents** — DB・JSON でフロートは禁止
+
+> `cents` は**その通貨の最小単位**であって、表示額の 1/100 ではない。
+> **JPY は小数点以下 0 桁（ISO 4217）なので、`*_cents` には円をそのまま格納する——×100 しない。**
+> 例: ¥1,500 は `1500` として格納する。`116480` は ¥116,480 であって ¥1,164.80 ではない。
 - **配置違反はマージブロック** — backend-standards 参照
 - **transform fidelity とプロベナンス変更は必ずコンプライアンスレビューを通す** — [`../review/compliance.md`](../review/compliance.md)
 

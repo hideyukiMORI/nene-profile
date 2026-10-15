@@ -65,8 +65,8 @@ The sign convention for `amount_cents` is **fixed and invariant**:
 
 | Direction | `amount_cents` | Example |
 |---|---|---|
-| Money flows INTO the account | **positive** | 振込入金 ¥100,000 → `+10000000` |
-| Money flows OUT OF the account | **negative** | 引落 ¥30,000 → `-3000000` |
+| Money flows INTO the account | **positive** | 振込入金 ¥100,000 → `+100000` |
+| Money flows OUT OF the account | **negative** | 引落 ¥30,000 → `-30000` |
 
 This matches standard bank statement convention and Japanese bookkeeping
 practice. A preset cannot override this — see ADR 0003 §1.
