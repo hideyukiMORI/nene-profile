@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { useCreateUser } from '@/entities/user'
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(8),
   role: z.enum(['admin', 'member', 'viewer']),
 })
